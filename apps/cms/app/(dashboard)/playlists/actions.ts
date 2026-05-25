@@ -25,8 +25,13 @@ export async function unpublishPlaylist(id: string) {
 
 export async function addItemToPlaylist(playlistId: string, mediaId: string, sequence: number) {
   const supabase = await createClient()
-  await supabase.from('playlist_items').insert({ playlist_id: playlistId, media_id: mediaId, sequence })
+  const { data } = await supabase
+    .from('playlist_items')
+    .insert({ playlist_id: playlistId, media_id: mediaId, sequence })
+    .select('*, media(*)')
+    .single()
   revalidatePath(`/playlists/${playlistId}`)
+  return data
 }
 
 export async function removeItemFromPlaylist(itemId: string, playlistId: string) {

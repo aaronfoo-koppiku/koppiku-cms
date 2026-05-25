@@ -8,7 +8,11 @@ import { GripVertical, X, CheckCircle2, Clock, Plus, Loader2 } from 'lucide-reac
 import type { Playlist, PlaylistItem, Media } from '@koppiku/shared'
 import { updateItemsSequence, removeItemFromPlaylist, addItemToPlaylist, publishPlaylist, unpublishPlaylist, updateItemDuration } from '../actions'
 
-function SortableItem({ item, playlistId }: { item: PlaylistItem & { media: Media }; playlistId: string }) {
+function SortableItem({ item, playlistId, onRemove }: {
+  item: PlaylistItem & { media: Media }
+  playlistId: string
+  onRemove: () => void
+}) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: item.id })
   const style = { transform: CSS.Transform.toString(transform), transition }
   const DEFAULT_DURATION = item.media.type === 'video' ? (item.media.duration_s ?? 30) : 10
@@ -41,7 +45,7 @@ function SortableItem({ item, playlistId }: { item: PlaylistItem & { media: Medi
         />
         <span className="text-xs text-gray-400">s</span>
       </div>
-      <button onClick={() => removeItemFromPlaylist(item.id, playlistId)}
+      <button onClick={onRemove}
         className="text-gray-300 hover:text-red-500 p-1 rounded-lg hover:bg-red-50 transition-colors opacity-0 group-hover:opacity-100">
         <X size={15} />
       </button>
@@ -88,10 +92,15 @@ export function PlaylistEditor({ playlist, items: initial, allMedia }: Props) {
     setPublishing(false)
   }
 
+  async function handleRemoveItem(itemId: string) {
+    setItems(prev => prev.filter(i => i.id !== itemId))
+    await removeItemFromPlaylist(itemId, playlist.id)
+  }
+
   async function handleAddMedia(mediaId: string) {
     setAddingId(mediaId)
-    await addItemToPlaylist(playlist.id, mediaId, items.length)
-    router.refresh()
+    const newItem = await addItemToPlaylist(playlist.id, mediaId, items.length)
+    if (newItem) setItems(prev => [...prev, newItem as any])
     setAddingId(null)
   }
 
@@ -125,7 +134,7 @@ export function PlaylistEditor({ playlist, items: initial, allMedia }: Props) {
         <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={items.map(i => i.id)} strategy={verticalListSortingStrategy}>
             <div className="space-y-2">
-              {items.map(item => <SortableItem key={item.id} item={item} playlistId={playlist.id} />)}
+              {items.map(item => <SortableItem key={item.id} item={item} playlistId={playlist.id} onRemove={() => handleRemoveItem(item.id)} />)}
               {!items.length && (
                 <div className="border-2 border-dashed border-gray-200 rounded-xl py-12 flex flex-col items-center text-center">
                   <Plus size={24} className="text-gray-300 mb-2" />
