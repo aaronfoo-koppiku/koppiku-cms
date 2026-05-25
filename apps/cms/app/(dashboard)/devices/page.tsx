@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
-import { pairDevice } from './actions'
+import { Monitor, Wifi, WifiOff } from 'lucide-react'
+import { PairDeviceForm } from './pair-form'
 
 function isOnline(lastSeen: string | null): boolean {
   if (!lastSeen) return false
@@ -14,50 +15,53 @@ export default async function DevicesPage() {
   ])
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Devices</h1>
+    <div className="space-y-8">
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">Devices</h1>
+        <p className="text-gray-500 text-sm mt-1">
+          {devices?.filter(d => d.status === 'active').length ?? 0} active screens
+        </p>
+      </div>
 
-      <form action={pairDevice} className="bg-white p-4 rounded-xl shadow-sm flex flex-wrap gap-3 items-end">
-        <div>
-          <label className="text-xs text-gray-500 block mb-1">Pairing code</label>
-          <input name="pairing_code" placeholder="123456" maxLength={6} required
-            className="w-28 border rounded-lg px-3 py-2 text-sm font-mono tracking-widest" />
-        </div>
-        <div>
-          <label className="text-xs text-gray-500 block mb-1">Outlet</label>
-          <select name="outlet_id" required className="border rounded-lg px-3 py-2 text-sm">
-            {(outlets ?? []).map((o: { id: string; name: string }) => (
-              <option key={o.id} value={o.id}>{o.name}</option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="text-xs text-gray-500 block mb-1">Device name</label>
-          <input name="device_name" placeholder="Screen 1" className="border rounded-lg px-3 py-2 text-sm" />
-        </div>
-        <button type="submit" className="bg-amber-600 text-white px-4 py-2 rounded-lg text-sm font-medium">
-          Pair Device
-        </button>
-      </form>
+      <PairDeviceForm outlets={outlets ?? []} />
 
-      <div className="bg-white rounded-xl shadow-sm divide-y">
-        {(devices ?? []).map((d: any) => (
-          <div key={d.id} className="flex items-center justify-between px-4 py-3">
-            <div className="flex items-center gap-3">
-              <div className={`w-2 h-2 rounded-full ${isOnline(d.last_seen) ? 'bg-green-500' : 'bg-gray-300'}`} />
-              <div>
-                <p className="text-sm font-medium">{d.name ?? 'Unnamed'}</p>
-                <p className="text-xs text-gray-500">
-                  {d.outlet?.name ?? 'Unpaired'} · Last seen: {d.last_seen ? new Date(d.last_seen).toLocaleString() : 'Never'}
-                </p>
+      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+        {(devices ?? []).map((d: any, i: number) => {
+          const online = isOnline(d.last_seen)
+          return (
+            <div key={d.id} className={`flex items-center justify-between px-5 py-4 ${i > 0 ? 'border-t border-gray-100' : ''}`}>
+              <div className="flex items-center gap-3">
+                <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${online ? 'bg-green-50' : 'bg-gray-100'}`}>
+                  <Monitor size={16} className={online ? 'text-green-600' : 'text-gray-400'} />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-medium text-gray-900">{d.name ?? 'Unnamed screen'}</p>
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${d.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
+                      {d.status}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    {d.outlet?.name ?? 'No outlet'} · Last seen: {d.last_seen ? new Date(d.last_seen).toLocaleString('en-MY') : 'Never'}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5 text-xs">
+                {online
+                  ? <><Wifi size={14} className="text-green-500" /><span className="text-green-600 font-medium">Online</span></>
+                  : <><WifiOff size={14} className="text-gray-400" /><span className="text-gray-400">Offline</span></>
+                }
               </div>
             </div>
-            <span className={`text-xs px-2 py-1 rounded-full ${d.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
-              {d.status}
-            </span>
+          )
+        })}
+        {!devices?.length && (
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <Monitor size={32} className="text-gray-300 mb-3" />
+            <p className="text-sm font-medium text-gray-500">No devices yet</p>
+            <p className="text-xs text-gray-400 mt-1">Pair a screen using the code shown on your TV</p>
           </div>
-        ))}
-        {!devices?.length && <p className="px-4 py-6 text-sm text-gray-400">No devices yet.</p>}
+        )}
       </div>
     </div>
   )

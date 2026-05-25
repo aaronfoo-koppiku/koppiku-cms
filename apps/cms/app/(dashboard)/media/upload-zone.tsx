@@ -1,5 +1,6 @@
 'use client'
 import { useRef } from 'react'
+import { Upload, Loader2 } from 'lucide-react'
 
 interface Props { onFiles: (files: File[]) => void; uploading: boolean }
 
@@ -22,8 +23,12 @@ export function UploadZone({ onFiles, uploading }: Props) {
     <div
       onDrop={handleDrop}
       onDragOver={e => e.preventDefault()}
-      onClick={() => inputRef.current?.click()}
-      className="border-2 border-dashed border-gray-300 rounded-xl p-10 text-center cursor-pointer hover:border-amber-400 transition"
+      onClick={() => !uploading && inputRef.current?.click()}
+      className={`border-2 border-dashed rounded-xl p-10 text-center transition-colors ${
+        uploading
+          ? 'border-amber-300 bg-amber-50 cursor-default'
+          : 'border-gray-200 hover:border-amber-400 hover:bg-amber-50/50 cursor-pointer'
+      }`}
     >
       <input
         ref={inputRef}
@@ -34,11 +39,22 @@ export function UploadZone({ onFiles, uploading }: Props) {
         className="hidden"
         onChange={handleChange}
       />
-      {uploading ? (
-        <p className="text-sm text-gray-500">Uploading...</p>
-      ) : (
-        <p className="text-sm text-gray-500">Drop images or videos here, or click to browse</p>
-      )}
+      <div className="flex flex-col items-center gap-2">
+        {uploading ? (
+          <>
+            <Loader2 size={24} className="text-amber-500 animate-spin" />
+            <p className="text-sm font-medium text-amber-600">Uploading to GCS...</p>
+          </>
+        ) : (
+          <>
+            <Upload size={24} className="text-gray-400" />
+            <div>
+              <p className="text-sm font-medium text-gray-700">Drop files here or click to browse</p>
+              <p className="text-xs text-gray-400 mt-0.5">Images and videos supported</p>
+            </div>
+          </>
+        )}
+      </div>
     </div>
   )
 }

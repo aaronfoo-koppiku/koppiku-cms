@@ -9,3 +9,5 @@ dist
 
 # GCP service account key — never commit
 infra/gcs-sa-key.json
+.vercel
+.gstack/
