@@ -1,8 +1,8 @@
 'use client'
 import { useEffect, useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Monitor, Wifi, WifiOff, Pencil, Check, X, Copy, KeyRound, Loader2 } from 'lucide-react'
-import { renameDevice } from './actions'
+import { Monitor, Wifi, WifiOff, Pencil, Check, X, Copy, KeyRound, Loader2, Unlink } from 'lucide-react'
+import { renameDevice, unpairDevice } from './actions'
 
 type Device = {
   id: string
@@ -98,6 +98,8 @@ interface Props {
 export function DevicesList({ initialDevices }: Props) {
   const [devices, setDevices] = useState<Device[]>(initialDevices)
   const [, setTick] = useState(0)
+  const [unpairing, setUnpairing] = useState<string | null>(null)
+  const [confirmUnpair, setConfirmUnpair] = useState<string | null>(null)
 
   // Tick every 15s to keep "X ago" labels fresh
   useEffect(() => {
@@ -122,6 +124,13 @@ export function DevicesList({ initialDevices }: Props) {
     return () => { supabase.removeChannel(channel) }
   }, [])
 
+  async function handleUnpair(id: string) {
+    setUnpairing(id)
+    setConfirmUnpair(null)
+    await unpairDevice(id)
+    setUnpairing(null)
+  }
+
   if (!devices.length) return (
     <div className="bg-white border border-gray-200 rounded-xl flex flex-col items-center justify-center py-16 text-center">
       <Monitor size={32} className="text-gray-300 mb-3" />
@@ -135,6 +144,7 @@ export function DevicesList({ initialDevices }: Props) {
       {devices.map((d, i) => {
         const online = isOnline(d.last_seen)
         const isPending = d.status === 'pending'
+        const isConnecting = d.status === 'active' && !d.last_seen
         const codeExpired = d.pairing_code_expires_at
           ? new Date(d.pairing_code_expires_at) <= new Date()
           : true
@@ -194,14 +204,48 @@ export function DevicesList({ initialDevices }: Props) {
                 </div>
               </div>
 
-              {/* Right: online status */}
-              <div className="flex items-center gap-1.5 text-xs shrink-0 mt-1">
-                {isPending ? (
-                  <span className="text-amber-500 font-medium">Waiting to pair</span>
-                ) : online ? (
-                  <><Wifi size={14} className="text-green-500" /><span className="text-green-600 font-medium">Online</span></>
-                ) : (
-                  <><WifiOff size={14} className="text-gray-400" /><span className="text-gray-400">Offline</span></>
+              {/* Right: status + unpair */}
+              <div className="flex flex-col items-end gap-2 shrink-0 mt-0.5">
+                <div className="flex items-center gap-1.5 text-xs">
+                  {isPending ? (
+                    <span className="text-amber-500 font-medium">Waiting to pair</span>
+                  ) : isConnecting ? (
+                    <><Loader2 size={14} className="animate-spin text-blue-400" /><span className="text-blue-500 font-medium">Connecting…</span></>
+                  ) : online ? (
+                    <><Wifi size={14} className="text-green-500" /><span className="text-green-600 font-medium">Online</span></>
+                  ) : (
+                    <><WifiOff size={14} className="text-gray-400" /><span className="text-gray-400">Offline</span></>
+                  )}
+                </div>
+
+                {!isPending && (
+                  confirmUnpair === d.id ? (
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs text-gray-500">Unpair?</span>
+                      <button
+                        onClick={() => handleUnpair(d.id)}
+                        disabled={unpairing === d.id}
+                        className="text-xs px-2 py-0.5 rounded bg-red-500 text-white hover:bg-red-600 disabled:opacity-60 flex items-center gap-1"
+                      >
+                        {unpairing === d.id ? <Loader2 size={11} className="animate-spin" /> : null}
+                        Yes
+                      </button>
+                      <button
+                        onClick={() => setConfirmUnpair(null)}
+                        className="text-xs px-2 py-0.5 rounded border border-gray-200 text-gray-500 hover:bg-gray-50"
+                      >
+                        No
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setConfirmUnpair(d.id)}
+                      className="flex items-center gap-1 text-xs text-gray-400 hover:text-red-500 transition-colors"
+                    >
+                      <Unlink size={11} />
+                      Unpair
+                    </button>
+                  )
                 )}
               </div>
             </div>

@@ -36,3 +36,17 @@ export async function renameDevice(id: string, name: string) {
   await supabase.from('devices').update({ name }).eq('id', id)
   revalidatePath('/devices')
 }
+
+export async function unpairDevice(id: string) {
+  const supabase = await createClient()
+  const newCode = String(Math.floor(100000 + Math.random() * 900000))
+  const newExpiry = new Date(Date.now() + 60 * 60 * 1000).toISOString()
+  await supabase.from('devices').update({
+    status: 'pending',
+    outlet_id: null,
+    last_seen: null,
+    pairing_code: newCode,
+    pairing_code_expires_at: newExpiry,
+  }).eq('id', id)
+  revalidatePath('/devices')
+}
