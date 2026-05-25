@@ -1,7 +1,5 @@
-create extension if not exists "uuid-ossp";
-
 create table outlets (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   name text not null,
   region text not null default '',
   timezone text not null default 'Asia/Kuala_Lumpur',
@@ -9,7 +7,7 @@ create table outlets (
 );
 
 create table devices (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   outlet_id uuid references outlets(id) on delete set null,
   name text,
   pairing_code text not null unique,
@@ -20,7 +18,7 @@ create table devices (
 );
 
 create table media (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   name text not null,
   type text not null check (type in ('image','video')),
   mime_type text not null,
@@ -34,7 +32,7 @@ create table media (
 );
 
 create table playlists (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   name text not null,
   status text not null default 'draft' check (status in ('draft','published')),
   created_by uuid references auth.users(id) on delete set null,
@@ -43,7 +41,7 @@ create table playlists (
 );
 
 create table playlist_items (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   playlist_id uuid not null references playlists(id) on delete cascade,
   media_id uuid not null references media(id) on delete cascade,
   sequence int not null,
@@ -51,7 +49,7 @@ create table playlist_items (
 );
 
 create table schedules (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   playlist_id uuid not null references playlists(id) on delete cascade,
   outlet_id uuid references outlets(id) on delete cascade,
   start_time time not null,
@@ -64,7 +62,7 @@ create table schedules (
 );
 
 create table playback_logs (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   device_id uuid references devices(id) on delete set null,
   playlist_id uuid references playlists(id) on delete set null,
   media_id uuid references media(id) on delete set null,
