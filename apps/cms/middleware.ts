@@ -23,10 +23,14 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser()
 
   if (!user && !request.nextUrl.pathname.startsWith('/login')) {
-    return NextResponse.redirect(new URL('/login', request.url))
+    const redirectResponse = NextResponse.redirect(new URL('/login', request.url))
+    response.cookies.getAll().forEach(cookie => redirectResponse.cookies.set(cookie.name, cookie.value))
+    return redirectResponse
   }
   if (user && request.nextUrl.pathname === '/login') {
-    return NextResponse.redirect(new URL('/dashboard', request.url))
+    const redirectResponse = NextResponse.redirect(new URL('/dashboard', request.url))
+    response.cookies.getAll().forEach(cookie => redirectResponse.cookies.set(cookie.name, cookie.value))
+    return redirectResponse
   }
 
   return response
