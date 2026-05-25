@@ -44,6 +44,18 @@ describe('resolveActiveSchedule', () => {
     expect(result?.id).toBe('high')
   })
 
+  it('excludes schedule outside active date range', () => {
+    const expired = { ...base, active_from: '2026-01-01', active_until: '2026-04-30' }
+    const result = resolveActiveSchedule([expired], 'o1', makeDate('08:00'))
+    expect(result).toBeNull()
+  })
+
+  it('matches schedule on active_from date', () => {
+    const startsToday = { ...base, active_from: '2026-05-25', active_until: null }
+    const result = resolveActiveSchedule([startsToday], 'o1', makeDate('08:00'))
+    expect(result?.id).toBe('1')
+  })
+
   it('filters by day_of_week when set', () => {
     const weekdays = { ...base, days_of_week: [1, 2, 3, 4, 5] } // Mon-Fri
     // makeDate uses 2026-05-25 = Monday = 1, so this should MATCH

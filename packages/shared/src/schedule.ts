@@ -9,8 +9,10 @@ export function resolveActiveSchedule(
 ): Schedule | null {
   const dayOfWeek = nowMY.getDay()
   const currentTime = `${String(nowMY.getHours()).padStart(2, '0')}:${String(nowMY.getMinutes()).padStart(2, '0')}`
-  const today = nowMY.toISOString().slice(0, 10)
+  const today = `${nowMY.getFullYear()}-${String(nowMY.getMonth() + 1).padStart(2, '0')}-${String(nowMY.getDate()).padStart(2, '0')}`
 
+  // Note: midnight-spanning schedules (e.g. 22:00–02:00) are not supported.
+  // end_time must be > start_time within the same day.
   const active = schedules.filter((s) => {
     const forThisOutlet = s.outlet_id === null || s.outlet_id === outletId
     const dayMatches = s.days_of_week.length === 0 || s.days_of_week.includes(dayOfWeek)

@@ -13,6 +13,7 @@ export type Device = {
   outlet_id: string | null
   name: string | null
   pairing_code: string
+  pairing_code_expires_at: string
   status: DeviceStatus
   last_seen: string | null
   ua: string | null
@@ -30,7 +31,7 @@ export type Media = {
   thumbnail_url: string | null
   duration_s: number | null
   size_bytes: number
-  uploaded_by: string
+  uploaded_by: string | null
   created_at: string
 }
 
@@ -40,7 +41,7 @@ export type Playlist = {
   id: string
   name: string
   status: PlaylistStatus
-  created_by: string
+  created_by: string | null
   created_at: string
   updated_at: string
 }
@@ -69,9 +70,9 @@ export type Schedule = {
 
 export type PlaybackLog = {
   id: string
-  device_id: string
-  playlist_id: string
-  media_id: string
+  device_id: string | null
+  playlist_id: string | null
+  media_id: string | null
   played_at: string
   duration_s: number
 }
