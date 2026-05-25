@@ -1,7 +1,9 @@
 import { createClient } from '@/lib/supabase/server'
 import { createOutlet, deleteOutlet } from './actions'
-import { Store, MapPin, Trash2 } from 'lucide-react'
+import { Store, MapPin } from 'lucide-react'
 import type { Outlet } from '@koppiku/shared'
+import { SubmitButton } from '@/components/submit-button'
+import { DeleteButton } from '@/components/delete-button'
 
 export default async function OutletsPage() {
   const supabase = await createClient()
@@ -21,10 +23,9 @@ export default async function OutletsPage() {
             className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-amber-400 transition-colors" />
           <input name="region" placeholder="Region (e.g. KL)" required
             className="w-36 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-amber-400 transition-colors" />
-          <button type="submit"
-            className="bg-amber-500 hover:bg-amber-400 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+          <SubmitButton className="bg-amber-500 hover:bg-amber-400 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
             Add Outlet
-          </button>
+          </SubmitButton>
         </form>
       </div>
 
@@ -44,10 +45,7 @@ export default async function OutletsPage() {
               </div>
             </div>
             <form action={deleteOutlet.bind(null, outlet.id)}>
-              <button type="submit"
-                className="text-gray-400 hover:text-red-500 p-1.5 rounded-lg hover:bg-red-50 transition-colors">
-                <Trash2 size={15} />
-              </button>
+              <DeleteButton className="text-gray-400 hover:text-red-500 hover:bg-red-50" />
             </form>
           </div>
         ))}

@@ -3,6 +3,7 @@ import { createPlaylist } from './actions'
 import Link from 'next/link'
 import { ListVideo, ChevronRight, Plus } from 'lucide-react'
 import type { Playlist } from '@koppiku/shared'
+import { SubmitButton } from '@/components/submit-button'
 
 export default async function PlaylistsPage() {
   const supabase = await createClient()
@@ -25,11 +26,10 @@ export default async function PlaylistsPage() {
         <form action={createPlaylist} className="flex gap-3">
           <input name="name" placeholder="e.g. Morning Menu, Weekend Specials" required
             className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-amber-400 transition-colors" />
-          <button type="submit"
-            className="bg-amber-500 hover:bg-amber-400 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5">
+          <SubmitButton className="bg-amber-500 hover:bg-amber-400 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
             <Plus size={15} />
             Create
-          </button>
+          </SubmitButton>
         </form>
       </div>
 

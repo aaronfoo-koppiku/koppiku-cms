@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Monitor, Wifi, WifiOff, Pencil, Check, X, Copy, KeyRound } from 'lucide-react'
+import { Monitor, Wifi, WifiOff, Pencil, Check, X, Copy, KeyRound, Loader2 } from 'lucide-react'
 import { renameDevice } from './actions'
 
 type Device = {
@@ -31,6 +31,7 @@ function timeAgo(ts: string | null): string {
 
 function RenameField({ id, initial }: { id: string; initial: string | null }) {
   const [editing, setEditing] = useState(false)
+  const [saving, setSaving] = useState(false)
   const [value, setValue] = useState(initial ?? '')
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -40,7 +41,10 @@ function RenameField({ id, initial }: { id: string; initial: string | null }) {
   }
 
   async function save() {
-    if (value.trim()) await renameDevice(id, value.trim())
+    if (!value.trim()) { setEditing(false); return }
+    setSaving(true)
+    await renameDevice(id, value.trim())
+    setSaving(false)
     setEditing(false)
   }
 
@@ -55,8 +59,8 @@ function RenameField({ id, initial }: { id: string; initial: string | null }) {
           className="text-sm font-medium text-gray-900 border border-amber-400 rounded-md px-2 py-0.5 focus:outline-none w-40"
           autoFocus
         />
-        <button onClick={save} className="p-1 text-green-600 hover:bg-green-50 rounded">
-          <Check size={13} />
+        <button onClick={save} disabled={saving} className="p-1 text-green-600 hover:bg-green-50 rounded disabled:opacity-60">
+          {saving ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />}
         </button>
         <button onClick={() => setEditing(false)} className="p-1 text-gray-400 hover:bg-gray-100 rounded">
           <X size={13} />

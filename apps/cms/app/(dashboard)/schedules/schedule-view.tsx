@@ -1,7 +1,8 @@
 'use client'
 import { useState, useTransition } from 'react'
 import { createSchedule, deleteSchedule } from './actions'
-import { Calendar, List, Plus, Trash2, Clock, X } from 'lucide-react'
+import { Calendar, List, Plus, Trash2, Clock, X, Loader2 } from 'lucide-react'
+import { SubmitButton } from '@/components/submit-button'
 
 const DAYS_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 const DAYS_FULL = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
@@ -53,6 +54,7 @@ export function ScheduleView({ schedules, outlets, playlists }: Props) {
   const [outletId, setOutletId] = useState<string>('all')
   const [quickAdd, setQuickAdd] = useState<{ day: number; hour: number } | null>(null)
   const [isPending, startTransition] = useTransition()
+  const [deletingId, setDeletingId] = useState<string | null>(null)
 
   const playlistColorIndex: Record<string, number> = {}
   playlists.forEach((p, i) => { playlistColorIndex[p.id] = i })
@@ -90,9 +92,10 @@ export function ScheduleView({ schedules, outlets, playlists }: Props) {
   }
 
   function handleDeleteClick(id: string) {
+    setDeletingId(id)
     startTransition(async () => {
-      const fd = new FormData()
       await deleteSchedule(id)
+      setDeletingId(null)
     })
   }
 
@@ -195,9 +198,12 @@ export function ScheduleView({ schedules, outlets, playlists }: Props) {
                       )}
                       <button
                         onClick={e => { e.stopPropagation(); handleDeleteClick(block.id) }}
-                        className="absolute top-1 right-1 opacity-0 group-hover/block:opacity-100 p-0.5 rounded text-red-400 hover:text-red-600 hover:bg-red-50 transition-opacity"
+                        disabled={deletingId === block.id}
+                        className="absolute top-1 right-1 opacity-0 group-hover/block:opacity-100 p-0.5 rounded text-red-400 hover:text-red-600 hover:bg-red-50 transition-opacity disabled:opacity-100"
                       >
-                        <X size={11} />
+                        {deletingId === block.id
+                          ? <Loader2 size={11} className="animate-spin" />
+                          : <X size={11} />}
                       </button>
                     </div>
                   ))}
@@ -267,11 +273,10 @@ export function ScheduleView({ schedules, outlets, playlists }: Props) {
                   <input type="number" name="priority" defaultValue={1} min={1}
                     className="w-20 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-amber-400 transition-colors" />
                 </div>
-                <button type="submit"
-                  className="bg-amber-500 hover:bg-amber-400 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5">
+                <SubmitButton className="bg-amber-500 hover:bg-amber-400 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
                   <Plus size={15} />
                   Add Schedule
-                </button>
+                </SubmitButton>
               </div>
             </form>
           </div>
@@ -297,9 +302,12 @@ export function ScheduleView({ schedules, outlets, playlists }: Props) {
                 </div>
                 <button
                   onClick={() => handleDeleteClick(s.id)}
-                  className="text-gray-400 hover:text-red-500 p-1.5 rounded-lg hover:bg-red-50 transition-colors"
+                  disabled={deletingId === s.id}
+                  className="text-gray-400 hover:text-red-500 p-1.5 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-60"
                 >
-                  <Trash2 size={15} />
+                  {deletingId === s.id
+                    ? <Loader2 size={15} className="animate-spin" />
+                    : <Trash2 size={15} />}
                 </button>
               </div>
             ))}
