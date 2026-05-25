@@ -1,6 +1,34 @@
-interface Props { pairingCode: string }
+import { useState, useEffect } from 'react'
 
-export function PairingScreen({ pairingCode }: Props) {
+interface Props {
+  pairingCode: string
+  expiresAt: Date | null
+}
+
+function useCountdown(expiresAt: Date | null) {
+  const [secondsLeft, setSecondsLeft] = useState<number | null>(null)
+
+  useEffect(() => {
+    if (!expiresAt) return
+    const tick = () => setSecondsLeft(Math.max(0, Math.round((expiresAt.getTime() - Date.now()) / 1000)))
+    tick()
+    const id = setInterval(tick, 1000)
+    return () => clearInterval(id)
+  }, [expiresAt])
+
+  return secondsLeft
+}
+
+function formatCountdown(s: number): string {
+  if (s <= 0) return 'Refreshing...'
+  if (s < 60) return `${s}s`
+  return `${Math.floor(s / 60)}m ${s % 60}s`
+}
+
+export function PairingScreen({ pairingCode, expiresAt }: Props) {
+  const secondsLeft = useCountdown(expiresAt)
+  const isExpiringSoon = secondsLeft !== null && secondsLeft < 60
+
   return (
     <div style={{
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
@@ -18,8 +46,15 @@ export function PairingScreen({ pairingCode }: Props) {
       }}>
         {pairingCode}
       </div>
-      <p style={{ marginTop: '2rem', fontSize: '0.85rem', color: '#6b7280' }}>
-        Code expires in 10 minutes
+      <p style={{
+        marginTop: '2rem', fontSize: '0.85rem',
+        color: isExpiringSoon ? '#f87171' : '#6b7280',
+      }}>
+        {secondsLeft === null
+          ? 'Code expires in 1 hour'
+          : secondsLeft <= 0
+            ? 'Refreshing code...'
+            : `Expires in ${formatCountdown(secondsLeft)}`}
       </p>
     </div>
   )

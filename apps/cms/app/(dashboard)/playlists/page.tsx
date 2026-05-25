@@ -24,7 +24,7 @@ export default async function PlaylistsPage() {
         <h2 className="text-sm font-semibold text-gray-700 mb-4">New playlist</h2>
         <form action={createPlaylist} className="flex gap-3">
           <input name="name" placeholder="e.g. Morning Menu, Weekend Specials" required
-            className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-amber-400 transition-colors" />
+            className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-amber-400 transition-colors" />
           <button type="submit"
             className="bg-amber-500 hover:bg-amber-400 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5">
             <Plus size={15} />

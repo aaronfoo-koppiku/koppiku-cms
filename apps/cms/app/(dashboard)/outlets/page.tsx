@@ -18,9 +18,9 @@ export default async function OutletsPage() {
         <h2 className="text-sm font-semibold text-gray-700 mb-4">Add outlet</h2>
         <form action={createOutlet} className="flex gap-3">
           <input name="name" placeholder="Outlet name" required
-            className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-amber-400 transition-colors" />
+            className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-amber-400 transition-colors" />
           <input name="region" placeholder="Region (e.g. KL)" required
-            className="w-36 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-amber-400 transition-colors" />
+            className="w-36 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-amber-400 transition-colors" />
           <button type="submit"
             className="bg-amber-500 hover:bg-amber-400 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
             Add Outlet

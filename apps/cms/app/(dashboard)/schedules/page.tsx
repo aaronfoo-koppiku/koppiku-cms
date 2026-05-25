@@ -26,7 +26,7 @@ export default async function SchedulesPage() {
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-gray-600">Playlist</label>
               <select name="playlist_id" required
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-amber-400 transition-colors">
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-amber-400 transition-colors">
                 <option value="">Select playlist...</option>
                 {(playlists ?? []).map((p: { id: string; name: string }) => (
                   <option key={p.id} value={p.id}>{p.name}</option>
@@ -36,7 +36,7 @@ export default async function SchedulesPage() {
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-gray-600">Outlet</label>
               <select name="outlet_id"
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-amber-400 transition-colors">
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-amber-400 transition-colors">
                 <option value="">All outlets</option>
                 {(outlets ?? []).map((o: { id: string; name: string }) => (
                   <option key={o.id} value={o.id}>{o.name}</option>
@@ -46,22 +46,22 @@ export default async function SchedulesPage() {
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-gray-600">Start time</label>
               <input type="time" name="start_time" required
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-amber-400 transition-colors" />
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-amber-400 transition-colors" />
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-gray-600">End time</label>
               <input type="time" name="end_time" required
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-amber-400 transition-colors" />
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-amber-400 transition-colors" />
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-gray-600">Active from</label>
               <input type="date" name="active_from" required
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-amber-400 transition-colors" />
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-amber-400 transition-colors" />
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-gray-600">Active until <span className="text-gray-400 font-normal">(blank = forever)</span></label>
               <input type="date" name="active_until"
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-amber-400 transition-colors" />
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-amber-400 transition-colors" />
             </div>
           </div>
 
@@ -83,7 +83,7 @@ export default async function SchedulesPage() {
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-gray-600">Priority</label>
               <input type="number" name="priority" defaultValue={1} min={1}
-                className="w-20 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-amber-400 transition-colors" />
+                className="w-20 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-amber-400 transition-colors" />
             </div>
             <button type="submit"
               className="bg-amber-500 hover:bg-amber-400 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5">
