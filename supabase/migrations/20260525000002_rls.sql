@@ -18,13 +18,25 @@ create policy "auth full access" on playback_logs for all to authenticated using
 
 -- Anon (TV player) can read active playlists and write heartbeat/logs
 create policy "anon read devices" on devices for select to anon using (true);
-create policy "anon update device last_seen" on devices for update to anon
-  using (true) with check (true);
 create policy "anon read outlets" on outlets for select to anon using (true);
 create policy "anon read media" on media for select to anon using (true);
 create policy "anon read playlists" on playlists for select to anon
   using (status = 'published');
-create policy "anon read playlist_items" on playlist_items for select to anon using (true);
-create policy "anon read schedules" on schedules for select to anon using (true);
+create policy "anon read playlist_items" on playlist_items for select to anon
+  using (
+    exists (
+      select 1 from playlists p
+      where p.id = playlist_items.playlist_id
+        and p.status = 'published'
+    )
+  );
+create policy "anon read schedules" on schedules for select to anon
+  using (
+    exists (
+      select 1 from playlists p
+      where p.id = schedules.playlist_id
+        and p.status = 'published'
+    )
+  );
 create policy "anon insert playback_logs" on playback_logs for insert to anon with check (true);
 create policy "anon insert devices" on devices for insert to anon with check (true);

@@ -12,7 +12,7 @@ create table devices (
   id uuid primary key default uuid_generate_v4(),
   outlet_id uuid references outlets(id) on delete set null,
   name text,
-  pairing_code text not null,
+  pairing_code text not null unique,
   pairing_code_expires_at timestamptz not null default (now() + interval '10 minutes'),
   status text not null default 'pending' check (status in ('pending','active')),
   last_seen timestamptz,
@@ -59,7 +59,8 @@ create table schedules (
   days_of_week int[] not null default '{}',
   active_from date not null default current_date,
   active_until date,
-  priority int not null default 1
+  priority int not null default 1,
+  check (start_time < end_time)
 );
 
 create table playback_logs (
@@ -78,3 +79,11 @@ begin new.updated_at = now(); return new; end;
 $$;
 create trigger playlists_updated_at before update on playlists
   for each row execute function update_updated_at();
+
+-- Indexes for query performance
+create index on devices (pairing_code);
+create index on devices (outlet_id);
+create index on playlist_items (playlist_id, sequence);
+create index on schedules (outlet_id);
+create index on schedules (playlist_id);
+create index on playback_logs (device_id, played_at);
