@@ -1,5 +1,6 @@
 'use client'
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { DndContext, closestCenter, type DragEndEvent } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
@@ -27,7 +28,7 @@ function SortableItem({ item, playlistId }: { item: PlaylistItem & { media: Medi
         <input
           type="number" min={1} max={300}
           defaultValue={item.display_duration_s ?? DEFAULT_DURATION}
-          onChange={e => updateItemDuration(item.id, Number(e.target.value), playlistId)}
+          onBlur={e => updateItemDuration(item.id, Number(e.target.value), playlistId)}
           className="w-14 border rounded px-2 py-1 text-center"
         />
         <span className="text-gray-400">s</span>
@@ -45,7 +46,9 @@ interface Props {
 }
 
 export function PlaylistEditor({ playlist, items: initial, allMedia }: Props) {
+  const router = useRouter()
   const [items, setItems] = useState(initial)
+  const [status, setStatus] = useState(playlist.status)
 
   async function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event
@@ -57,17 +60,34 @@ export function PlaylistEditor({ playlist, items: initial, allMedia }: Props) {
     await updateItemsSequence(reordered.map(i => ({ id: i.id, sequence: i.sequence })))
   }
 
+  async function handlePublish() {
+    await publishPlaylist(playlist.id)
+    setStatus('published')
+    router.refresh()
+  }
+
+  async function handleUnpublish() {
+    await unpublishPlaylist(playlist.id)
+    setStatus('draft')
+    router.refresh()
+  }
+
+  async function handleAddMedia(mediaId: string) {
+    await addItemToPlaylist(playlist.id, mediaId, items.length)
+    router.refresh()
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">{playlist.name}</h1>
-        {playlist.status === 'draft' ? (
-          <button onClick={() => publishPlaylist(playlist.id)}
+        {status === 'draft' ? (
+          <button onClick={handlePublish}
             className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium">
             Publish
           </button>
         ) : (
-          <button onClick={() => unpublishPlaylist(playlist.id)}
+          <button onClick={handleUnpublish}
             className="bg-gray-400 text-white px-4 py-2 rounded-lg text-sm font-medium">
             Unpublish
           </button>
@@ -88,7 +108,7 @@ export function PlaylistEditor({ playlist, items: initial, allMedia }: Props) {
         <div className="grid grid-cols-3 md:grid-cols-5 gap-3">
           {allMedia.map(m => (
             <button key={m.id}
-              onClick={() => addItemToPlaylist(playlist.id, m.id, items.length)}
+              onClick={() => handleAddMedia(m.id)}
               className="text-left bg-white rounded-lg overflow-hidden shadow-sm hover:ring-2 ring-amber-400">
               {m.type === 'image'
                 ? <img src={m.cdn_url} className="w-full aspect-video object-cover" alt={m.name} />
