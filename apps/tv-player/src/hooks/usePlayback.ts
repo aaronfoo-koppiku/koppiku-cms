@@ -17,7 +17,7 @@ export function getActiveItems(items: (PlaylistItem & { media: Media })[]) {
 export function usePlayback(items: (PlaylistItem & { media: Media })[]) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const activeItems = getActiveItems(items)
-  const timerRef = useRef<ReturnType<typeof setTimeout>>()
+  const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
   const advanceSlide = useCallback(() => {
     setCurrentIndex(i => (i + 1) % Math.max(activeItems.length, 1))
