@@ -3,11 +3,13 @@ import { useEffect, useState, useCallback, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { UploadZone } from './upload-zone'
 import { MediaGrid } from './media-grid'
+import { MediaPreviewModal } from './media-preview-modal'
 import type { Media } from '@koppiku/shared'
 
 export default function MediaPage() {
   const [items, setItems] = useState<Media[]>([])
   const [uploading, setUploading] = useState(false)
+  const [preview, setPreview] = useState<Media | null>(null)
   const supabase = useMemo(() => createClient(), [])
 
   const loadMedia = useCallback(async () => {
@@ -49,7 +51,8 @@ export default function MediaPage() {
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">Media Library</h1>
       <UploadZone onFiles={handleFiles} uploading={uploading} />
-      <MediaGrid items={items} onDelete={handleDelete} />
+      <MediaGrid items={items} onDelete={handleDelete} onPreview={setPreview} />
+      {preview && <MediaPreviewModal item={preview} onClose={() => setPreview(null)} />}
     </div>
   )
 }
