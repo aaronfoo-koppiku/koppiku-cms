@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 
 interface Props {
-  pairingCode: string
+  pairingCode: string | null
   expiresAt: Date | null
 }
 
@@ -43,8 +43,9 @@ export function PairingScreen({ pairingCode, expiresAt }: Props) {
       <div style={{
         fontSize: '5rem', fontWeight: 700, letterSpacing: '0.4em',
         background: '#d97706', color: '#fff', padding: '1.5rem 3rem', borderRadius: '1rem',
+        minWidth: '16rem', textAlign: 'center',
       }}>
-        {pairingCode}
+        {pairingCode ?? '···'}
       </div>
       <p style={{
         marginTop: '2rem', fontSize: '0.85rem',

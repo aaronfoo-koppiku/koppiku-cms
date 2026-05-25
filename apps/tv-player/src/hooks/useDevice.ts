@@ -16,51 +16,66 @@ function getOrCreateDeviceId(): string {
 const HOUR_MS = 60 * 60 * 1000
 
 export function useDevice() {
-  const deviceId = getOrCreateDeviceId()
-  const [pairingCode, setPairingCode] = useState(generatePairingCode)
+  const [deviceId] = useState(getOrCreateDeviceId)
+  const [pairingCode, setPairingCode] = useState<string | null>(null)
   const [expiresAt, setExpiresAt] = useState<Date | null>(null)
   const [outletId, setOutletId] = useState<string | null>(
     () => localStorage.getItem('koppiku_outlet_id')
   )
 
   useEffect(() => {
-    supabase
-      .from('devices')
-      .select('id, outlet_id, status, pairing_code, pairing_code_expires_at')
-      .eq('id', deviceId)
-      .single()
-      .then(async ({ data }) => {
-        if (!data) {
-          const { data: inserted } = await supabase.from('devices').insert({
-            id: deviceId,
-            pairing_code: pairingCode,
-            ua: navigator.userAgent,
-          }).select().single()
-          if (inserted?.pairing_code_expires_at) {
+    let cancelled = false
+
+    async function init() {
+      const { data } = await supabase
+        .from('devices')
+        .select('id, outlet_id, status, pairing_code, pairing_code_expires_at')
+        .eq('id', deviceId)
+        .single()
+
+      if (cancelled) return
+
+      if (!data) {
+        const code = generatePairingCode()
+        const { data: inserted } = await supabase.from('devices').insert({
+          id: deviceId,
+          pairing_code: code,
+          ua: navigator.userAgent,
+        }).select().single()
+        if (cancelled) return
+        if (inserted) {
+          setPairingCode(inserted.pairing_code)
+          if (inserted.pairing_code_expires_at) {
             setExpiresAt(new Date(inserted.pairing_code_expires_at))
           }
-        } else if (data.status === 'active' && data.outlet_id) {
-          localStorage.setItem('koppiku_outlet_id', data.outlet_id)
-          setOutletId(data.outlet_id)
-        } else if (data.status === 'pending') {
-          const exp = new Date(data.pairing_code_expires_at)
-          if (exp <= new Date()) {
-            // Code expired — generate a fresh one
-            const newCode = generatePairingCode()
-            const newExpiry = new Date(Date.now() + HOUR_MS)
-            await supabase.from('devices').update({
-              pairing_code: newCode,
-              pairing_code_expires_at: newExpiry.toISOString(),
-            }).eq('id', deviceId)
+        }
+      } else if (data.status === 'active' && data.outlet_id) {
+        localStorage.setItem('koppiku_outlet_id', data.outlet_id)
+        setOutletId(data.outlet_id)
+      } else if (data.status === 'pending') {
+        const exp = new Date(data.pairing_code_expires_at)
+        if (exp <= new Date()) {
+          const newCode = generatePairingCode()
+          const newExpiry = new Date(Date.now() + HOUR_MS)
+          const { error } = await supabase.from('devices').update({
+            pairing_code: newCode,
+            pairing_code_expires_at: newExpiry.toISOString(),
+          }).eq('id', deviceId)
+          if (cancelled) return
+          if (!error) {
             setPairingCode(newCode)
             setExpiresAt(newExpiry)
-          } else {
-            setPairingCode(data.pairing_code)
-            setExpiresAt(exp)
           }
+        } else {
+          setPairingCode(data.pairing_code)
+          setExpiresAt(exp)
         }
-      })
-  }, [deviceId, pairingCode])
+      }
+    }
+
+    init()
+    return () => { cancelled = true }
+  }, [deviceId])
 
   useEffect(() => {
     const channel = supabase
