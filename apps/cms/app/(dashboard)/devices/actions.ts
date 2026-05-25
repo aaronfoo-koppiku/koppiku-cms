@@ -8,6 +8,8 @@ export async function pairDevice(formData: FormData) {
   const device_name = formData.get('device_name') as string | null
 
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
   const { data: { session } } = await supabase.auth.getSession()
   if (!session) throw new Error('Not authenticated')
 
