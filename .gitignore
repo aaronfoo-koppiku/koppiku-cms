@@ -6,3 +6,6 @@ dist
 .env*.local
 .turbo
 .superpowers/
+
+# GCP service account key — never commit
+infra/gcs-sa-key.json
