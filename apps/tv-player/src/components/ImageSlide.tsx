@@ -6,8 +6,10 @@ export function ImageSlide({ url, alt }: Props) {
   const [ready, setReady] = useState(false)
   return (
     <img
-      src={url} alt={alt}
+      src={url}
+      alt={alt}
       onLoad={() => setReady(true)}
+      onError={() => setReady(true)} // show broken image rather than staying hidden
       style={{
         position: 'absolute', inset: 0, width: '100%', height: '100%',
         objectFit: 'contain', background: '#000',
