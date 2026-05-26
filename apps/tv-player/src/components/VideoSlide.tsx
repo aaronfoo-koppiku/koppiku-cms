@@ -14,8 +14,9 @@ export function VideoSlide({ url, onEnded }: Props) {
 
   function handleCanPlay() {
     setReady(true)
-    // autoPlay is unreliable on Android TV — call play() explicitly
-    videoRef.current?.play().catch(onEnded)
+    // autoPlay is unreliable on Android TV — call play() explicitly.
+    // Ignore rejection: autoPlay may still work, and the 15s timeout handles true failures.
+    videoRef.current?.play().catch(() => {})
   }
 
   return (

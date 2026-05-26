@@ -7,25 +7,27 @@ export function usePlaybackLogger(
   deviceId: string,
 ) {
   const startRef = useRef<number>(Date.now())
-  const prevItemRef = useRef<string | null>(null)
-  const prevPlaylistRef = useRef<string | null>(null)
+  const prevRef = useRef<{ itemId: string; mediaId: string; playlistId: string } | null>(null)
 
   useEffect(() => {
     if (!currentItem) return
 
-    if (prevItemRef.current && prevItemRef.current !== currentItem.id) {
+    if (prevRef.current && prevRef.current.itemId !== currentItem.id) {
       const duration = Math.round((Date.now() - startRef.current) / 1000)
       supabase.from('playback_logs').insert({
         device_id: deviceId,
-        playlist_id: prevPlaylistRef.current,
-        media_id: prevItemRef.current,
+        playlist_id: prevRef.current.playlistId,
+        media_id: prevRef.current.mediaId,
         played_at: new Date(startRef.current).toISOString(),
         duration_s: duration,
       }).then()
     }
 
     startRef.current = Date.now()
-    prevItemRef.current = currentItem.id
-    prevPlaylistRef.current = currentItem.playlist_id
+    prevRef.current = {
+      itemId: currentItem.id,
+      mediaId: currentItem.media.id,
+      playlistId: currentItem.playlist_id,
+    }
   }, [currentItem?.id, deviceId])
 }
