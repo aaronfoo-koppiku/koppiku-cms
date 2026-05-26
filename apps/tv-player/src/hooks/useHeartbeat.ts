@@ -8,7 +8,10 @@ export function useHeartbeat(deviceId: string) {
       try {
         await fetch(import.meta.env.VITE_HEARTBEAT_URL, {
           method: 'POST',
-          headers: { 'content-type': 'application/json' },
+          headers: {
+            'content-type': 'application/json',
+            'authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          },
           body: JSON.stringify({ device_id: deviceId }),
         })
       } catch { /* ignore — offline */ }

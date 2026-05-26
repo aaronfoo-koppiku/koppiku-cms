@@ -15,7 +15,9 @@ function saveItems(items: (PlaylistItem & { media: Media })[]) {
 }
 
 async function fetchScheduleItems(outletId: string): Promise<(PlaylistItem & { media: Media })[]> {
-  const res = await fetch(`${import.meta.env.VITE_RESOLVE_SCHEDULE_URL}?outlet_id=${outletId}`)
+  const res = await fetch(`${import.meta.env.VITE_RESOLVE_SCHEDULE_URL}?outlet_id=${outletId}`, {
+    headers: { 'authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
+  })
   if (!res.ok) throw new Error('Failed to fetch schedule')
   const { items } = await res.json()
   return items ?? []
