@@ -84,10 +84,15 @@ export function useDevice() {
         event: 'UPDATE', schema: 'public', table: 'devices',
         filter: `id=eq.${deviceId}`,
       }, (payload) => {
-        const updated = payload.new as { outlet_id: string | null; status: string }
+        const updated = payload.new as { outlet_id: string | null; status: string; pairing_code: string; pairing_code_expires_at: string }
         if (updated.status === 'active' && updated.outlet_id) {
           localStorage.setItem('koppiku_outlet_id', updated.outlet_id)
           setOutletId(updated.outlet_id)
+        } else if (updated.status === 'pending') {
+          localStorage.removeItem('koppiku_outlet_id')
+          setOutletId(null)
+          setPairingCode(updated.pairing_code)
+          setExpiresAt(updated.pairing_code_expires_at ? new Date(updated.pairing_code_expires_at) : null)
         }
       })
       .subscribe()
