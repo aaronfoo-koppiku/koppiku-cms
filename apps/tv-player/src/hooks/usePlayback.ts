@@ -16,12 +16,10 @@ export function getActiveItems(items: (PlaylistItem & { media: Media })[]) {
 
 export function usePlayback(items: (PlaylistItem & { media: Media })[]) {
   const [currentIndex, setCurrentIndex] = useState(0)
-  const [slideKey, setSlideKey] = useState(0)
   const activeItems = getActiveItems(items)
   const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
   const advanceSlide = useCallback(() => {
-    setSlideKey(k => k + 1)
     setCurrentIndex(i => (i + 1) % Math.max(activeItems.length, 1))
   }, [activeItems.length])
 
@@ -40,5 +38,5 @@ export function usePlayback(items: (PlaylistItem & { media: Media })[]) {
     }
   }, [activeItems.length, currentIndex])
 
-  return { currentItem, currentIndex, advanceSlide, slideKey }
+  return { currentItem, currentIndex, advanceSlide }
 }

@@ -9,7 +9,7 @@ interface Props { deviceId: string; outletId: string }
 
 export function PlayerScreen({ deviceId, outletId }: Props) {
   const { items, isOffline } = useRealtime(outletId)
-  const { currentItem, advanceSlide, slideKey } = usePlayback(items)
+  const { currentItem, advanceSlide } = usePlayback(items)
   useHeartbeat(deviceId)
   usePlaybackLogger(currentItem, deviceId)
 
@@ -27,9 +27,9 @@ export function PlayerScreen({ deviceId, outletId }: Props) {
   return (
     <div style={{ position: 'relative', width: '100vw', height: '100vh', background: '#000' }}>
       {currentItem.media.type === 'image' ? (
-        <ImageSlide key={slideKey} url={currentItem.media.cdn_url} alt={currentItem.media.name} />
+        <ImageSlide url={currentItem.media.cdn_url} alt={currentItem.media.name} />
       ) : (
-        <VideoSlide key={slideKey} url={currentItem.media.cdn_url} onEnded={advanceSlide} />
+        <VideoSlide url={currentItem.media.cdn_url} onEnded={advanceSlide} />
       )}
       {isOffline && (
         <div style={{

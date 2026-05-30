@@ -103,19 +103,6 @@ serve(async (req) => {
     return new Response(JSON.stringify({ error: text }), { status: 502 })
   }
 
-  // Files use UUID-based names so URLs are immutable — safe to cache for 1 year
-  await fetch(
-    `https://storage.googleapis.com/storage/v1/b/${bucket}/o/${encodeURIComponent(objectKey)}`,
-    {
-      method: 'PATCH',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ cacheControl: 'public, max-age=31536000, immutable' }),
-    },
-  )
-
   const gcsUrl = `gs://${bucket}/${objectKey}`
   const cdnUrl = `${cdnBase}/${encodeURIComponent(objectKey)}`
 
