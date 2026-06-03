@@ -18,7 +18,7 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
         runtimeCaching: [{
-          urlPattern: /^https:\/\/cdn\./,
+          urlPattern: /^https:\/\/storage\.googleapis\.com\//,
           handler: 'CacheFirst',
           options: {
             cacheName: 'media-cache',

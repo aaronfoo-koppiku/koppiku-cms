@@ -13,7 +13,7 @@ export function usePlaybackLogger(
   useEffect(() => {
     if (!currentItem) return
 
-    if (prevItemRef.current && prevItemRef.current !== currentItem.id) {
+    if (prevItemRef.current && prevItemRef.current !== currentItem.media.id) {
       const duration = Math.round((Date.now() - startRef.current) / 1000)
       supabase.from('playback_logs').insert({
         device_id: deviceId,
@@ -25,7 +25,7 @@ export function usePlaybackLogger(
     }
 
     startRef.current = Date.now()
-    prevItemRef.current = currentItem.id
+    prevItemRef.current = currentItem.media.id
     prevPlaylistRef.current = currentItem.playlist_id
-  }, [currentItem?.id, deviceId])
+  }, [currentItem?.media.id, deviceId])
 }
