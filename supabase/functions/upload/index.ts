@@ -80,8 +80,9 @@ async function transcodeVideo(
           key: 'video-stream',
           videoStream: {
             h264: {
-              heightPixels: 1080,
-              widthPixels: 1920,
+              // 0 = preserve original dimensions (no aspect ratio distortion)
+              heightPixels: 0,
+              widthPixels: 0,
               bitrateBps: 4_000_000,
               frameRate: 30,
               profile: 'high',
