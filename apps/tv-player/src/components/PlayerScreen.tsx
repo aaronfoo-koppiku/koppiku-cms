@@ -1,5 +1,4 @@
-import { useEffect, useState } from 'react'
-import type { PlaylistItem, Media } from '@koppiku/shared'
+import { useEffect } from 'react'
 import { usePlayback } from '../hooks/usePlayback'
 import { useRealtime } from '../hooks/useRealtime'
 import { useHeartbeat } from '../hooks/useHeartbeat'
@@ -7,14 +6,7 @@ import { usePlaybackLogger } from '../hooks/usePlaybackLogger'
 import { ImageSlide } from './ImageSlide'
 import { VideoSlide } from './VideoSlide'
 
-type Item = PlaylistItem & { media: Media }
-
 interface Props { deviceId: string; outletId: string }
-
-function SlideContent({ item, onEnded, isActive }: { item: Item; onEnded: () => void; isActive: boolean }) {
-  if (item.media.type === 'image') return <ImageSlide url={item.media.cdn_url} alt={item.media.name} />
-  return <VideoSlide url={item.media.cdn_url} onEnded={onEnded} isActive={isActive} />
-}
 
 export function PlayerScreen({ deviceId, outletId }: Props) {
   const { items, isOffline } = useRealtime(outletId)
@@ -22,55 +14,44 @@ export function PlayerScreen({ deviceId, outletId }: Props) {
   useHeartbeat(deviceId)
   usePlaybackLogger(currentItem, deviceId)
 
-  // A/B double buffer: even indexes → buffer A is active, odd → buffer B
-  // Both are always mounted so the inactive one preloads while the active one plays.
-  const isAActive = currentIndex % 2 === 0
-  const [bufA, setBufA] = useState<Item | null>(null)
-  const [bufB, setBufB] = useState<Item | null>(null)
-
+  // Prefetch next item into service worker cache while current plays.
+  // Images: new Image() is zero-cost. Videos: fetch() into SW cache so the
+  // video element gets an instant cache hit when it mounts next.
   useEffect(() => {
-    if (!currentItem) return
-    if (isAActive) {
-      setBufA(currentItem)
-      if (nextItem) setBufB(nextItem)
+    if (!nextItem) return
+    if (nextItem.media.type === 'image') {
+      const img = new Image()
+      img.src = nextItem.media.cdn_url
     } else {
-      setBufB(currentItem)
-      if (nextItem) setBufA(nextItem)
+      fetch(nextItem.media.cdn_url).catch(() => {})
     }
-  }, [currentItem?.id, nextItem?.id, isAActive])
+  }, [nextItem?.media.cdn_url])
 
-  if (!bufA && !bufB) {
-    if (!currentItem) {
-      return (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#1a0a00' }}>
-          <p style={{ fontFamily: 'sans-serif', color: '#6b7280' }}>No content scheduled</p>
-        </div>
-      )
-    }
-    return null
+  if (!currentItem) {
+    return (
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        height: '100vh', background: '#1a0a00',
+      }}>
+        <p style={{ fontFamily: 'sans-serif', color: '#6b7280' }}>No content scheduled</p>
+      </div>
+    )
   }
 
   return (
     <div style={{ position: 'relative', width: '100vw', height: '100vh', background: '#000' }}>
-      {bufA && (
-        <div style={{
-          position: 'absolute', inset: 0,
-          opacity: isAActive ? 1 : 0,
-          transition: 'opacity 0.4s ease',
-          zIndex: isAActive ? 2 : 1,
-        }}>
-          <SlideContent item={bufA} onEnded={advanceSlide} isActive={isAActive} />
-        </div>
-      )}
-      {bufB && (
-        <div style={{
-          position: 'absolute', inset: 0,
-          opacity: isAActive ? 0 : 1,
-          transition: 'opacity 0.4s ease',
-          zIndex: isAActive ? 1 : 2,
-        }}>
-          <SlideContent item={bufB} onEnded={advanceSlide} isActive={!isAActive} />
-        </div>
+      {currentItem.media.type === 'image' ? (
+        <ImageSlide
+          key={currentIndex}
+          url={currentItem.media.cdn_url}
+          alt={currentItem.media.name}
+        />
+      ) : (
+        <VideoSlide
+          key={currentIndex}
+          url={currentItem.media.cdn_url}
+          onEnded={advanceSlide}
+        />
       )}
       {isOffline && (
         <div style={{

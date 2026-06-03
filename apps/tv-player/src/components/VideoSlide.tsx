@@ -1,37 +1,40 @@
 import { useRef, useState, useEffect } from 'react'
 
-interface Props { url: string; onEnded: () => void; isActive: boolean }
+interface Props { url: string; onEnded: () => void }
 
-export function VideoSlide({ url, onEnded, isActive }: Props) {
+export function VideoSlide({ url, onEnded }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const [ready, setReady] = useState(false)
-  // Ref so onPlaying handler always reads current isActive without stale closure
-  const isActiveRef = useRef(isActive)
-  isActiveRef.current = isActive
 
-  // On URL change: load + silently play-then-pause in background so onPlaying fires
-  // and ready=true before this slot ever becomes active. Uses a ref snapshot so
-  // this effect only re-runs on URL changes, not every isActive flip.
   useEffect(() => {
     setReady(false)
     const video = videoRef.current
     if (!video) return
     video.load()
-    if (!isActiveRef.current) {
-      video.play().catch(() => {})
-    }
-  }, [url])
-
-  // When this slot becomes active: restart from 0 and ensure playing + fallback
-  useEffect(() => {
-    if (!isActive) return
-    const video = videoRef.current
-    if (!video) return
-    video.currentTime = 0
     video.play().catch(() => {})
-    const fallback = setTimeout(() => setReady(true), 3000)
-    return () => clearTimeout(fallback)
-  }, [isActive, url])
+
+    // Show video after 5s even if canplay never fires on old Android TV Chrome
+    const showFallback = setTimeout(() => setReady(true), 5000)
+
+    // Watchdog: if video is visible but currentTime hasn't moved for 8s, force advance
+    let lastTime = -1
+    const watchdog = setInterval(() => {
+      if (!videoRef.current) return
+      const ct = videoRef.current.currentTime
+      if (ct === lastTime) {
+        // Stuck — skip to next slide
+        clearInterval(watchdog)
+        clearTimeout(showFallback)
+        onEnded()
+      }
+      lastTime = ct
+    }, 8000)
+
+    return () => {
+      clearTimeout(showFallback)
+      clearInterval(watchdog)
+    }
+  }, [url]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <video
@@ -40,22 +43,12 @@ export function VideoSlide({ url, onEnded, isActive }: Props) {
       preload="auto"
       muted
       playsInline
-      onPlaying={() => {
-        setReady(true)
-        // Pause the preloading video after first frame renders; it'll restart
-        // from 0 when this slot activates, already marked ready
-        if (!isActiveRef.current) videoRef.current?.pause()
-      }}
-      onEnded={isActive ? onEnded : undefined}
-      style={isActive ? {
+      onCanPlay={() => setReady(true)}
+      onEnded={onEnded}
+      style={{
         position: 'absolute', inset: 0, width: '100%', height: '100%',
         objectFit: 'contain', background: '#000',
-        opacity: ready ? 1 : 0, transition: 'opacity 0.2s',
-      } : {
-        // Off-screen while preloading — prevents Chrome's grey overlay from
-        // showing through the crossfade layer on old Android TV Chrome builds
-        position: 'absolute', width: 1, height: 1,
-        left: -9999, top: -9999, opacity: 0,
+        opacity: ready ? 1 : 0, transition: 'opacity 0.3s',
       }}
     />
   )
