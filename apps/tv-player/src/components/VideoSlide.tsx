@@ -6,10 +6,12 @@ export function VideoSlide({ url, fallbackUrl, onEnded }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const [ready, setReady] = useState(false)
   const [errored, setErrored] = useState(false)
+  const retriedRef = useRef(false)
 
   useEffect(() => {
     setReady(false)
     setErrored(false)
+    retriedRef.current = false
     const video = videoRef.current
     if (!video) return
     video.load()
@@ -18,18 +20,28 @@ export function VideoSlide({ url, fallbackUrl, onEnded }: Props) {
     // Show video after 5s even if canplay never fires on old Android TV Chrome
     const showFallback = setTimeout(() => setReady(true), 5000)
 
-    // Watchdog: if currentTime hasn't moved for 8s while active, force advance
+    // Watchdog: check every 5s if currentTime has moved; if not, retry once
+    // then skip — catches stalled videos that never fire onError or onEnded
     let lastTime = -1
     const watchdog = setInterval(() => {
-      if (!videoRef.current) return
-      const ct = videoRef.current.currentTime
+      const v = videoRef.current
+      if (!v) return
+      const ct = v.currentTime
       if (ct === lastTime) {
-        clearInterval(watchdog)
-        clearTimeout(showFallback)
-        onEnded()
+        if (!retriedRef.current) {
+          // First stall: retry play before giving up
+          retriedRef.current = true
+          v.load()
+          v.play().catch(() => {})
+        } else {
+          // Still stuck after retry — skip
+          clearInterval(watchdog)
+          clearTimeout(showFallback)
+          onEnded()
+        }
       }
       lastTime = ct
-    }, 8000)
+    }, 5000)
 
     return () => {
       clearTimeout(showFallback)
@@ -39,7 +51,6 @@ export function VideoSlide({ url, fallbackUrl, onEnded }: Props) {
 
   return (
     <>
-      {/* Fallback shown while loading or on error */}
       {fallbackUrl && (!ready || errored) && (
         <img
           src={fallbackUrl}
@@ -59,8 +70,14 @@ export function VideoSlide({ url, fallbackUrl, onEnded }: Props) {
         onCanPlay={() => setReady(true)}
         onEnded={onEnded}
         onError={() => {
+          if (!retriedRef.current) {
+            // Retry once on error before skipping
+            retriedRef.current = true
+            const v = videoRef.current
+            if (v) { v.load(); v.play().catch(() => {}) }
+            return
+          }
           setErrored(true)
-          // Advance to next slide after 3s so a broken video doesn't block the playlist
           setTimeout(onEnded, 3000)
         }}
         style={{

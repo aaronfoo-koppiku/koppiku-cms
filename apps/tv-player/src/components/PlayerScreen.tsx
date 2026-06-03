@@ -14,6 +14,13 @@ export function PlayerScreen({ deviceId, outletId }: Props) {
   useHeartbeat(deviceId)
   usePlaybackLogger(currentItem, deviceId)
 
+  // Hard reload every 4 hours — clears memory leaks that accumulate in
+  // long-running Android TV Chrome sessions over the course of a day
+  useEffect(() => {
+    const t = setTimeout(() => window.location.reload(), 4 * 60 * 60 * 1000)
+    return () => clearTimeout(t)
+  }, [])
+
   // Prefetch next item into service worker cache while current plays.
   // Images: new Image() is zero-cost. Videos: fetch() into SW cache so the
   // video element gets an instant cache hit when it mounts next.
