@@ -2,6 +2,7 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
+import { RangeRequestsPlugin } from 'workbox-range-requests'
 import path from 'path'
 
 export default defineConfig({
@@ -23,6 +24,9 @@ export default defineConfig({
           options: {
             cacheName: 'media-cache',
             expiration: { maxEntries: 200, maxAgeSeconds: 86400 * 7 },
+            // Required for video: Chrome sends range requests (bytes=0-N),
+            // without this plugin the cache miss on every loop causes grey screen
+            plugins: [new RangeRequestsPlugin()],
           },
         }],
       },
