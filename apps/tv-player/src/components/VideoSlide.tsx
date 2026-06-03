@@ -12,6 +12,9 @@ export function VideoSlide({ url, onEnded }: Props) {
     if (!video) return
     video.load()
     video.play().catch(() => {})
+    // Fallback: show after 3s if canplay never fires (codec/network issue)
+    const fallback = setTimeout(() => setReady(true), 3000)
+    return () => clearTimeout(fallback)
   }, [url])
 
   return (

@@ -1,12 +1,19 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 
 interface Props { url: string; alt: string }
 
 export function ImageSlide({ url, alt }: Props) {
   const [ready, setReady] = useState(false)
+  const imgRef = useRef<HTMLImageElement>(null)
+
+  // If image is already cached, onLoad won't fire — check complete after mount
+  useEffect(() => {
+    if (imgRef.current?.complete) setReady(true)
+  }, [])
 
   return (
     <img
+      ref={imgRef}
       src={url} alt={alt}
       onLoad={() => setReady(true)}
       style={{
