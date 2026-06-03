@@ -41,6 +41,7 @@ export type Playlist = {
   id: string
   name: string
   status: PlaylistStatus
+  fallback_image_id: string | null
   created_by: string | null
   created_at: string
   updated_at: string

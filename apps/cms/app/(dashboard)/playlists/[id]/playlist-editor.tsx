@@ -6,7 +6,7 @@ import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } 
 import { CSS } from '@dnd-kit/utilities'
 import { GripVertical, X, CheckCircle2, Clock, Plus, Loader2 } from 'lucide-react'
 import type { Playlist, PlaylistItem, Media } from '@koppiku/shared'
-import { updateItemsSequence, removeItemFromPlaylist, addItemToPlaylist, publishPlaylist, unpublishPlaylist, updateItemDuration } from '../actions'
+import { updateItemsSequence, removeItemFromPlaylist, addItemToPlaylist, publishPlaylist, unpublishPlaylist, updateItemDuration, setPlaylistFallbackImage } from '../actions'
 
 function SortableItem({ item, playlistId, onRemove }: {
   item: PlaylistItem & { media: Media }
@@ -65,6 +65,10 @@ export function PlaylistEditor({ playlist, items: initial, allMedia }: Props) {
   const [status, setStatus] = useState(playlist.status)
   const [publishing, setPublishing] = useState(false)
   const [addingId, setAddingId] = useState<string | null>(null)
+  const [fallbackImageId, setFallbackImageId] = useState<string | null>(playlist.fallback_image_id)
+
+  const fallbackImage = allMedia.find(m => m.id === fallbackImageId) ?? null
+  const imageMedia = allMedia.filter(m => m.type === 'image')
 
   async function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event
@@ -95,6 +99,11 @@ export function PlaylistEditor({ playlist, items: initial, allMedia }: Props) {
   async function handleRemoveItem(itemId: string) {
     setItems(prev => prev.filter(i => i.id !== itemId))
     await removeItemFromPlaylist(itemId, playlist.id)
+  }
+
+  async function handleSetFallback(mediaId: string | null) {
+    setFallbackImageId(mediaId)
+    await setPlaylistFallbackImage(playlist.id, mediaId)
   }
 
   async function handleAddMedia(mediaId: string) {
@@ -145,6 +154,31 @@ export function PlaylistEditor({ playlist, items: initial, allMedia }: Props) {
             </div>
           </SortableContext>
         </DndContext>
+      </div>
+
+      <div>
+        <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Fallback image</h2>
+        <p className="text-xs text-gray-400 mb-3">Shown on screen while videos load. Select an image from your library.</p>
+        {fallbackImage ? (
+          <div className="flex items-center gap-3 bg-white border border-amber-300 rounded-xl p-3 w-fit">
+            <img src={fallbackImage.cdn_url} className="w-20 h-12 object-cover rounded-lg" alt={fallbackImage.name} />
+            <div>
+              <p className="text-sm font-medium text-gray-900">{fallbackImage.name}</p>
+              <button onClick={() => handleSetFallback(null)} className="text-xs text-red-500 hover:text-red-600 mt-0.5">Remove</button>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-3 md:grid-cols-5 gap-3">
+            {imageMedia.map(m => (
+              <button key={m.id} onClick={() => handleSetFallback(m.id)}
+                className="text-left bg-white border border-gray-200 rounded-xl overflow-hidden hover:border-amber-400 hover:shadow-sm transition-all">
+                <img src={m.cdn_url} className="w-full aspect-video object-cover" alt={m.name} />
+                <p className="text-xs p-2 truncate text-gray-600">{m.name}</p>
+              </button>
+            ))}
+            {!imageMedia.length && <p className="text-xs text-gray-400 col-span-5">No images in media library yet.</p>}
+          </div>
+        )}
       </div>
 
       <div>

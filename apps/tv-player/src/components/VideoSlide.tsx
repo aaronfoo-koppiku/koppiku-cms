@@ -1,10 +1,8 @@
 import { useRef, useState, useEffect } from 'react'
 
-const FALLBACK_URL = import.meta.env.VITE_FALLBACK_IMAGE_URL as string | undefined
+interface Props { url: string; fallbackUrl?: string; onEnded: () => void }
 
-interface Props { url: string; onEnded: () => void }
-
-export function VideoSlide({ url, onEnded }: Props) {
+export function VideoSlide({ url, fallbackUrl, onEnded }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const [ready, setReady] = useState(false)
   const [errored, setErrored] = useState(false)
@@ -42,9 +40,9 @@ export function VideoSlide({ url, onEnded }: Props) {
   return (
     <>
       {/* Fallback shown while loading or on error */}
-      {FALLBACK_URL && (!ready || errored) && (
+      {fallbackUrl && (!ready || errored) && (
         <img
-          src={FALLBACK_URL}
+          src={fallbackUrl}
           alt=""
           style={{
             position: 'absolute', inset: 0, width: '100%', height: '100%',

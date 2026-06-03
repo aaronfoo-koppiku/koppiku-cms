@@ -15,7 +15,7 @@ serve(async (req) => {
   // Fetch all schedules for this outlet (+ nationwide ones) with published playlists
   const { data: schedules } = await supabase
     .from('schedules')
-    .select('*, playlist:playlists(*)')
+    .select('*, playlist:playlists(*, fallback_image:fallback_image_id(cdn_url))')
     .or(`outlet_id.eq.${outletId},outlet_id.is.null`)
 
   // Current Malaysia time using local date parts (not toISOString which is UTC)
@@ -43,7 +43,9 @@ serve(async (req) => {
     .eq('playlist_id', schedule.playlist_id)
     .order('sequence')
 
-  return new Response(JSON.stringify({ schedule, items: items ?? [] }), {
+  const fallbackImageUrl = schedule.playlist?.fallback_image?.cdn_url ?? null
+
+  return new Response(JSON.stringify({ schedule, items: items ?? [], fallback_image_url: fallbackImageUrl }), {
     headers: { ...cors, 'Content-Type': 'application/json' },
   })
 })

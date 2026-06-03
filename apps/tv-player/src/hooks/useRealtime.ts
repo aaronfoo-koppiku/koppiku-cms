@@ -3,6 +3,7 @@ import type { PlaylistItem, Media } from '@koppiku/shared'
 import { supabase } from '../lib/supabase'
 
 const STORAGE_KEY = 'koppiku_cached_items'
+const FALLBACK_KEY = 'koppiku_fallback_url'
 
 function loadCachedItems(): (PlaylistItem & { media: Media })[] {
   try {
@@ -14,24 +15,26 @@ function saveItems(items: (PlaylistItem & { media: Media })[]) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(items))
 }
 
-async function fetchScheduleItems(outletId: string): Promise<(PlaylistItem & { media: Media })[]> {
-  const res = await fetch(`${import.meta.env.VITE_RESOLVE_SCHEDULE_URL}?outlet_id=${outletId}`, {
-    headers: { 'authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
-  })
-  if (!res.ok) throw new Error('Failed to fetch schedule')
-  const { items } = await res.json()
-  return items ?? []
-}
-
 export function useRealtime(outletId: string) {
   const [items, setItems] = useState<(PlaylistItem & { media: Media })[]>(loadCachedItems)
+  const [fallbackImageUrl, setFallbackImageUrl] = useState<string | null>(
+    () => localStorage.getItem(FALLBACK_KEY)
+  )
   const [isOffline, setIsOffline] = useState(false)
 
   const refresh = useCallback(async () => {
     try {
-      const fresh = await fetchScheduleItems(outletId)
-      setItems(fresh)
-      saveItems(fresh)
+      const res = await fetch(`${import.meta.env.VITE_RESOLVE_SCHEDULE_URL}?outlet_id=${outletId}`, {
+        headers: { 'authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
+      })
+      if (!res.ok) throw new Error('Failed to fetch schedule')
+      const { items: fresh, fallback_image_url } = await res.json()
+      setItems(fresh ?? [])
+      saveItems(fresh ?? [])
+      const url: string | null = fallback_image_url ?? null
+      setFallbackImageUrl(url)
+      if (url) localStorage.setItem(FALLBACK_KEY, url)
+      else localStorage.removeItem(FALLBACK_KEY)
       setIsOffline(false)
     } catch {
       setIsOffline(true)
@@ -48,12 +51,10 @@ export function useRealtime(outletId: string) {
   useEffect(() => {
     const channel = supabase
       .channel(`outlet:${outletId}`)
-      // Filtered to this outlet only — prevents all screens refreshing on any CMS change
       .on('postgres_changes', {
         event: '*', schema: 'public', table: 'schedules',
         filter: `outlet_id=eq.${outletId}`,
       }, refresh)
-      // playlists + playlist_items have no outlet_id to filter on — rely on 60s poll instead
       .subscribe((status) => {
         if (status === 'CHANNEL_ERROR') setIsOffline(true)
         if (status === 'SUBSCRIBED') setIsOffline(false)
@@ -61,5 +62,5 @@ export function useRealtime(outletId: string) {
     return () => { supabase.removeChannel(channel) }
   }, [outletId, refresh])
 
-  return { items, isOffline }
+  return { items, fallbackImageUrl, isOffline }
 }

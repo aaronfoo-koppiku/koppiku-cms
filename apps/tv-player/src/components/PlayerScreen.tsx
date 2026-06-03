@@ -9,7 +9,7 @@ import { VideoSlide } from './VideoSlide'
 interface Props { deviceId: string; outletId: string }
 
 export function PlayerScreen({ deviceId, outletId }: Props) {
-  const { items, isOffline } = useRealtime(outletId)
+  const { items, fallbackImageUrl, isOffline } = useRealtime(outletId)
   const { currentItem, nextItem, currentIndex, advanceSlide } = usePlayback(items)
   useHeartbeat(deviceId)
   usePlaybackLogger(currentItem, deviceId)
@@ -50,6 +50,7 @@ export function PlayerScreen({ deviceId, outletId }: Props) {
         <VideoSlide
           key={currentIndex}
           url={currentItem.media.cdn_url}
+          fallbackUrl={fallbackImageUrl ?? undefined}
           onEnded={advanceSlide}
         />
       )}

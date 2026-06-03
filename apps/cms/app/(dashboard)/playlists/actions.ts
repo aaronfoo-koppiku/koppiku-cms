@@ -52,3 +52,9 @@ export async function updateItemDuration(itemId: string, duration: number | null
   await supabase.from('playlist_items').update({ display_duration_s: duration }).eq('id', itemId)
   revalidatePath(`/playlists/${playlistId}`)
 }
+
+export async function setPlaylistFallbackImage(playlistId: string, mediaId: string | null) {
+  const supabase = await createClient()
+  await supabase.from('playlists').update({ fallback_image_id: mediaId }).eq('id', playlistId)
+  revalidatePath(`/playlists/${playlistId}`)
+}
