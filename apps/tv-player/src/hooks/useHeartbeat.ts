@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 
-const INTERVAL_MS = 30_000
+const INTERVAL_MS = 60_000
 
 export function useHeartbeat(deviceId: string) {
   useEffect(() => {

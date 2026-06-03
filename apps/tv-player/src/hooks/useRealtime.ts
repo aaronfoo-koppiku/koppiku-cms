@@ -48,9 +48,12 @@ export function useRealtime(outletId: string) {
   useEffect(() => {
     const channel = supabase
       .channel(`outlet:${outletId}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'schedules' }, refresh)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'playlists' }, refresh)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'playlist_items' }, refresh)
+      // Filtered to this outlet only — prevents all screens refreshing on any CMS change
+      .on('postgres_changes', {
+        event: '*', schema: 'public', table: 'schedules',
+        filter: `outlet_id=eq.${outletId}`,
+      }, refresh)
+      // playlists + playlist_items have no outlet_id to filter on — rely on 60s poll instead
       .subscribe((status) => {
         if (status === 'CHANNEL_ERROR') setIsOffline(true)
         if (status === 'SUBSCRIBED') setIsOffline(false)
