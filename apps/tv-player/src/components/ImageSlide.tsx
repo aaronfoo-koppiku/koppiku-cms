@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useLayoutEffect } from 'react'
 
 interface Props { url: string; alt: string }
 
@@ -6,10 +6,12 @@ export function ImageSlide({ url, alt }: Props) {
   const [ready, setReady] = useState(false)
   const imgRef = useRef<HTMLImageElement>(null)
 
-  // If image is already cached, onLoad won't fire — check complete after mount
-  useEffect(() => {
+  // useLayoutEffect fires before paint — resets ready and catches cached images
+  // in the same tick, avoiding any opacity-0 flash for already-cached URLs
+  useLayoutEffect(() => {
+    setReady(false)
     if (imgRef.current?.complete) setReady(true)
-  }, [])
+  }, [url])
 
   return (
     <img
