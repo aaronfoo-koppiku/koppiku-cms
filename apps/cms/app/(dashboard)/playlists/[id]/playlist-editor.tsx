@@ -1,12 +1,12 @@
 'use client'
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { DndContext, closestCenter, type DragEndEvent } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { GripVertical, X, CheckCircle2, Clock, Plus, Loader2 } from 'lucide-react'
+import { GripVertical, X, CheckCircle2, Clock, Plus, Loader2, Pencil, Check } from 'lucide-react'
 import type { Playlist, PlaylistItem, Media } from '@koppiku/shared'
-import { updateItemsSequence, removeItemFromPlaylist, addItemToPlaylist, publishPlaylist, unpublishPlaylist, updateItemDuration, setPlaylistFallbackImage } from '../actions'
+import { updateItemsSequence, removeItemFromPlaylist, addItemToPlaylist, publishPlaylist, unpublishPlaylist, updateItemDuration, setPlaylistFallbackImage, renamePlaylist } from '../actions'
 
 function SortableItem({ item, playlistId, onRemove }: {
   item: PlaylistItem & { media: Media }
@@ -66,6 +66,10 @@ export function PlaylistEditor({ playlist, items: initial, allMedia }: Props) {
   const [publishing, setPublishing] = useState(false)
   const [addingId, setAddingId] = useState<string | null>(null)
   const [fallbackImageId, setFallbackImageId] = useState<string | null>(playlist.fallback_image_id)
+  const [editingName, setEditingName] = useState(false)
+  const [nameValue, setNameValue] = useState(playlist.name)
+  const [displayName, setDisplayName] = useState(playlist.name)
+  const nameInputRef = useRef<HTMLInputElement>(null)
 
   const fallbackImage = allMedia.find(m => m.id === fallbackImageId) ?? null
   const imageMedia = allMedia.filter(m => m.type === 'image')
@@ -106,6 +110,21 @@ export function PlaylistEditor({ playlist, items: initial, allMedia }: Props) {
     await setPlaylistFallbackImage(playlist.id, mediaId)
   }
 
+  function startNameEdit() {
+    setNameValue(displayName)
+    setEditingName(true)
+    setTimeout(() => nameInputRef.current?.focus(), 0)
+  }
+
+  async function commitNameEdit() {
+    const trimmed = nameValue.trim()
+    if (trimmed && trimmed !== displayName) {
+      setDisplayName(trimmed)
+      await renamePlaylist(playlist.id, trimmed)
+    }
+    setEditingName(false)
+  }
+
   async function handleAddMedia(mediaId: string) {
     setAddingId(mediaId)
     const newItem = await addItemToPlaylist(playlist.id, mediaId, items.length)
@@ -117,7 +136,39 @@ export function PlaylistEditor({ playlist, items: initial, allMedia }: Props) {
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{playlist.name}</h1>
+          {editingName ? (
+            <div className="flex items-center gap-2">
+              <input
+                ref={nameInputRef}
+                value={nameValue}
+                onChange={e => setNameValue(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') commitNameEdit()
+                  if (e.key === 'Escape') setEditingName(false)
+                }}
+                className="text-2xl font-bold text-gray-900 border-b-2 border-amber-400 focus:outline-none bg-transparent w-64"
+              />
+              <button onClick={commitNameEdit}
+                className="p-1 rounded-lg text-green-600 hover:bg-green-50 transition-colors">
+                <Check size={16} />
+              </button>
+              <button onClick={() => setEditingName(false)}
+                className="p-1 rounded-lg text-gray-400 hover:bg-gray-100 transition-colors">
+                <X size={16} />
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 group/title">
+              <h1 className="text-2xl font-bold text-gray-900">{displayName}</h1>
+              <button
+                onClick={startNameEdit}
+                className="p-1.5 rounded-lg text-gray-300 hover:text-gray-600 hover:bg-gray-100 transition-colors opacity-0 group-hover/title:opacity-100"
+                title="Rename playlist"
+              >
+                <Pencil size={14} />
+              </button>
+            </div>
+          )}
           <p className="text-gray-500 text-sm mt-1">{items.length} items in playlist</p>
         </div>
         <button

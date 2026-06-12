@@ -58,3 +58,16 @@ export async function setPlaylistFallbackImage(playlistId: string, mediaId: stri
   await supabase.from('playlists').update({ fallback_image_id: mediaId }).eq('id', playlistId)
   revalidatePath(`/playlists/${playlistId}`)
 }
+
+export async function deletePlaylist(id: string) {
+  const supabase = await createClient()
+  await supabase.from('playlists').delete().eq('id', id)
+  revalidatePath('/playlists')
+}
+
+export async function renamePlaylist(id: string, name: string) {
+  const supabase = await createClient()
+  await supabase.from('playlists').update({ name }).eq('id', id)
+  revalidatePath('/playlists')
+  revalidatePath(`/playlists/${id}`)
+}

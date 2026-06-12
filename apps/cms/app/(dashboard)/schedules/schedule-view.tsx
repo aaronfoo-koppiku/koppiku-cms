@@ -6,6 +6,18 @@ import { SubmitButton } from '@/components/submit-button'
 
 const DAYS_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 const DAYS_FULL = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+const MONTHS_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
+function getWeekDates(): Date[] {
+  const today = new Date()
+  const startOfWeek = new Date(today)
+  startOfWeek.setDate(today.getDate() - today.getDay())
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(startOfWeek)
+    d.setDate(startOfWeek.getDate() + i)
+    return d
+  })
+}
 const ROW_H = 48
 
 const PALETTE = [
@@ -52,6 +64,9 @@ function pad(n: number) { return String(n).padStart(2, '0') }
 export function ScheduleView({ schedules, outlets, playlists }: Props) {
   const [view, setView] = useState<'calendar' | 'list'>('calendar')
   const [outletId, setOutletId] = useState<string>('all')
+  const weekDates = getWeekDates()
+  const today = new Date()
+  const todayIndex = today.getDay()
   const [quickAdd, setQuickAdd] = useState<{ day: number; hour: number } | null>(null)
   const [isPending, startTransition] = useTransition()
   const [deletingId, setDeletingId] = useState<string | null>(null)
@@ -136,11 +151,20 @@ export function ScheduleView({ schedules, outlets, playlists }: Props) {
           <div className="grid border-b border-gray-100 sticky top-0 bg-white z-20"
             style={{ gridTemplateColumns: '3.5rem repeat(7, 1fr)' }}>
             <div className="border-r border-gray-100" />
-            {DAYS_SHORT.map((d, i) => (
-              <div key={i} className="py-3 text-center text-xs font-semibold text-gray-500 border-r border-gray-100 last:border-r-0 uppercase tracking-wide">
-                {d}
-              </div>
-            ))}
+            {DAYS_SHORT.map((d, i) => {
+              const isToday = i === todayIndex
+              const date = weekDates[i]
+              return (
+                <div key={i} className={`py-2.5 text-center border-r border-gray-100 last:border-r-0 ${isToday ? 'bg-amber-50' : ''}`}>
+                  <p className={`text-xs font-semibold uppercase tracking-wide ${isToday ? 'text-amber-600' : 'text-gray-500'}`}>
+                    {d}
+                  </p>
+                  <p className={`text-xs mt-0.5 font-medium tabular-nums ${isToday ? 'text-amber-500' : 'text-gray-400'}`}>
+                    {date.getDate()} {MONTHS_SHORT[date.getMonth()]}
+                  </p>
+                </div>
+              )
+            })}
           </div>
 
           {/* Scrollable grid */}

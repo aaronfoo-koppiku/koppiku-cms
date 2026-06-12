@@ -47,11 +47,16 @@ export default function MediaPage() {
     await supabase.from('media').delete().eq('id', id)
   }
 
+  async function handleRename(id: string, name: string) {
+    setItems(prev => prev.map(m => m.id === id ? { ...m, name } : m))
+    await supabase.from('media').update({ name }).eq('id', id)
+  }
+
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">Media Library</h1>
       <UploadZone onFiles={handleFiles} uploading={uploading} />
-      <MediaGrid items={items} onDelete={handleDelete} onPreview={setPreview} />
+      <MediaGrid items={items} onDelete={handleDelete} onPreview={setPreview} onRename={handleRename} />
       {preview && <MediaPreviewModal item={preview} onClose={() => setPreview(null)} />}
     </div>
   )

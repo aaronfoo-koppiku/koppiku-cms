@@ -1,9 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 import { createPlaylist } from './actions'
-import Link from 'next/link'
-import { ListVideo, ChevronRight, Plus } from 'lucide-react'
-import type { Playlist } from '@koppiku/shared'
+import { Plus } from 'lucide-react'
 import { SubmitButton } from '@/components/submit-button'
+import { PlaylistsClient } from './playlists-client'
 
 export default async function PlaylistsPage() {
   const supabase = await createClient()
@@ -34,35 +33,7 @@ export default async function PlaylistsPage() {
       </div>
 
       <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-        {(playlists ?? []).map((p, i) => (
-          <Link key={p.id} href={`/playlists/${p.id}`}
-            className={`flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors group ${i > 0 ? 'border-t border-gray-100' : ''}`}>
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 bg-amber-50 rounded-lg flex items-center justify-center">
-                <ListVideo size={16} className="text-amber-600" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-900">{p.name}</p>
-                <p className="text-xs text-gray-400 mt-0.5">
-                  {p.playlist_items?.[0]?.count ?? 0} items
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${p.status === 'published' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
-                {p.status}
-              </span>
-              <ChevronRight size={16} className="text-gray-300 group-hover:text-gray-400 transition-colors" />
-            </div>
-          </Link>
-        ))}
-        {!playlists?.length && (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <ListVideo size={32} className="text-gray-300 mb-3" />
-            <p className="text-sm font-medium text-gray-500">No playlists yet</p>
-            <p className="text-xs text-gray-400 mt-1">Create your first playlist above</p>
-          </div>
-        )}
+        <PlaylistsClient playlists={playlists ?? []} />
       </div>
     </div>
   )
