@@ -57,7 +57,7 @@ export function VideoSlide({ url, fallbackUrl, onEnded }: Props) {
           alt=""
           style={{
             position: 'absolute', inset: 0, width: '100%', height: '100%',
-            objectFit: 'contain', background: '#000',
+            objectFit: 'cover', background: '#000',
           }}
         />
       )}
@@ -82,7 +82,7 @@ export function VideoSlide({ url, fallbackUrl, onEnded }: Props) {
         }}
         style={{
           position: 'absolute', inset: 0, width: '100%', height: '100%',
-          objectFit: 'contain', background: '#000',
+          objectFit: 'cover', background: '#000',
           opacity: ready && !errored ? 1 : 0, transition: 'opacity 0.3s',
         }}
       />

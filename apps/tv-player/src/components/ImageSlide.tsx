@@ -20,7 +20,7 @@ export function ImageSlide({ url, alt }: Props) {
       onLoad={() => setReady(true)}
       style={{
         position: 'absolute', inset: 0, width: '100%', height: '100%',
-        objectFit: 'contain', background: '#000',
+        objectFit: 'cover', background: '#000',
         opacity: ready ? 1 : 0, transition: 'opacity 0.2s',
       }}
     />
