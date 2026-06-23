@@ -1,7 +1,7 @@
 'use client'
 import { useState, useTransition } from 'react'
-import { createSchedule, deleteSchedule } from './actions'
-import { Calendar, List, Plus, Trash2, Clock, X, Loader2 } from 'lucide-react'
+import { createSchedule, deleteSchedule, updateSchedule } from './actions'
+import { Calendar, List, Plus, Trash2, Clock, X, Loader2, Pencil } from 'lucide-react'
 import { SubmitButton } from '@/components/submit-button'
 
 const DAYS_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
@@ -68,6 +68,7 @@ export function ScheduleView({ schedules, outlets, playlists }: Props) {
   const today = new Date()
   const todayIndex = today.getDay()
   const [quickAdd, setQuickAdd] = useState<{ day: number; hour: number } | null>(null)
+  const [editingSchedule, setEditingSchedule] = useState<Schedule | null>(null)
   const [isPending, startTransition] = useTransition()
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
@@ -103,6 +104,16 @@ export function ScheduleView({ schedules, outlets, playlists }: Props) {
     startTransition(async () => {
       await createSchedule(fd)
       setQuickAdd(null)
+    })
+  }
+
+  function handleEditSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    const id = editingSchedule!.id
+    const fd = new FormData(e.currentTarget)
+    startTransition(async () => {
+      await updateSchedule(id, fd)
+      setEditingSchedule(null)
     })
   }
 
@@ -221,6 +232,12 @@ export function ScheduleView({ schedules, outlets, playlists }: Props) {
                         </span>
                       )}
                       <button
+                        onClick={e => { e.stopPropagation(); setEditingSchedule(block) }}
+                        className="absolute top-1 right-6 opacity-0 group-hover/block:opacity-100 p-0.5 rounded text-gray-400 hover:text-amber-600 hover:bg-amber-50 transition-opacity"
+                      >
+                        <Pencil size={11} />
+                      </button>
+                      <button
                         onClick={e => { e.stopPropagation(); handleDeleteClick(block.id) }}
                         disabled={deletingId === block.id}
                         className="absolute top-1 right-1 opacity-0 group-hover/block:opacity-100 p-0.5 rounded text-red-400 hover:text-red-600 hover:bg-red-50 transition-opacity disabled:opacity-100"
@@ -237,7 +254,7 @@ export function ScheduleView({ schedules, outlets, playlists }: Props) {
           </div>
 
           <div className="px-4 py-2 border-t border-gray-100 bg-gray-50">
-            <p className="text-xs text-gray-400">Click any empty slot to add a schedule · Hover a block to delete</p>
+            <p className="text-xs text-gray-400">Click any empty slot to add · Hover a block to edit or delete</p>
           </div>
         </div>
       ) : (
@@ -324,15 +341,23 @@ export function ScheduleView({ schedules, outlets, playlists }: Props) {
                     </div>
                   </div>
                 </div>
-                <button
-                  onClick={() => handleDeleteClick(s.id)}
-                  disabled={deletingId === s.id}
-                  className="text-gray-400 hover:text-red-500 p-1.5 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-60"
-                >
-                  {deletingId === s.id
-                    ? <Loader2 size={15} className="animate-spin" />
-                    : <Trash2 size={15} />}
-                </button>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setEditingSchedule(s)}
+                    className="text-gray-400 hover:text-amber-500 p-1.5 rounded-lg hover:bg-amber-50 transition-colors"
+                  >
+                    <Pencil size={15} />
+                  </button>
+                  <button
+                    onClick={() => handleDeleteClick(s.id)}
+                    disabled={deletingId === s.id}
+                    className="text-gray-400 hover:text-red-500 p-1.5 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-60"
+                  >
+                    {deletingId === s.id
+                      ? <Loader2 size={15} className="animate-spin" />
+                      : <Trash2 size={15} />}
+                  </button>
+                </div>
               </div>
             ))}
             {!filtered.length && (
@@ -412,6 +437,104 @@ export function ScheduleView({ schedules, outlets, playlists }: Props) {
                   className="flex-1 bg-amber-500 hover:bg-amber-400 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50">
                   {isPending ? 'Saving…' : 'Add'}
                 </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit schedule modal */}
+      {editingSchedule && (
+        <div
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 p-4"
+          onClick={() => setEditingSchedule(null)}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between mb-5">
+              <h3 className="text-base font-semibold text-gray-900">Edit schedule</h3>
+              <button onClick={() => setEditingSchedule(null)}
+                className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 transition-colors">
+                <X size={15} />
+              </button>
+            </div>
+
+            <form key={editingSchedule.id} onSubmit={handleEditSubmit} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-gray-600">Playlist</label>
+                  <select name="playlist_id" required defaultValue={editingSchedule.playlist_id} className={inputCls}>
+                    <option value="">Select playlist...</option>
+                    {playlists.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                  </select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-gray-600">Outlet</label>
+                  <select name="outlet_id" defaultValue={editingSchedule.outlet_id ?? ''} className={inputCls}>
+                    <option value="">All outlets</option>
+                    {outlets.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
+                  </select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-gray-600">Start time</label>
+                  <input type="time" name="start_time" required
+                    defaultValue={editingSchedule.start_time.slice(0, 5)} className={inputCls} />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-gray-600">End time</label>
+                  <input type="time" name="end_time" required
+                    defaultValue={editingSchedule.end_time.slice(0, 5)} className={inputCls} />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-gray-600">Active from</label>
+                  <input type="date" name="active_from" required
+                    defaultValue={editingSchedule.active_from} className={inputCls} />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-gray-600">Active until <span className="text-gray-400 font-normal">(blank = forever)</span></label>
+                  <input type="date" name="active_until"
+                    defaultValue={editingSchedule.active_until ?? ''} className={inputCls} />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-gray-600">Days <span className="text-gray-400 font-normal">(none = every day)</span></label>
+                <div className="flex gap-2">
+                  {DAYS_SHORT.map((d, i) => (
+                    <label key={i} className="flex flex-col items-center gap-1 cursor-pointer group">
+                      <input
+                        type="checkbox"
+                        name="days_of_week"
+                        value={i}
+                        defaultChecked={editingSchedule.days_of_week.includes(i)}
+                        className="sr-only peer"
+                      />
+                      <span className="w-9 h-9 rounded-lg border border-gray-200 flex items-center justify-center text-xs text-gray-500 peer-checked:bg-amber-500 peer-checked:text-white peer-checked:border-amber-500 group-hover:border-amber-300 transition-colors">
+                        {d}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex items-end gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-gray-600">Priority</label>
+                  <input type="number" name="priority" defaultValue={editingSchedule.priority} min={1}
+                    className="w-20 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-amber-400 transition-colors" />
+                </div>
+                <div className="flex flex-1 gap-3">
+                  <button type="button" onClick={() => setEditingSchedule(null)}
+                    className="flex-1 border border-gray-200 text-gray-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors">
+                    Cancel
+                  </button>
+                  <button type="submit" disabled={isPending}
+                    className="flex-1 bg-amber-500 hover:bg-amber-400 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50">
+                    {isPending ? 'Saving…' : 'Save changes'}
+                  </button>
+                </div>
               </div>
             </form>
           </div>
