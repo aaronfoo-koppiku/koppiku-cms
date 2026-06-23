@@ -35,6 +35,7 @@ type Schedule = {
   id: string
   playlist_id: string
   outlet_id: string | null
+  outlet_group_id: string | null
   start_time: string
   end_time: string
   days_of_week: number[]
@@ -43,15 +44,19 @@ type Schedule = {
   active_until: string | null
   playlist: { name: string } | null
   outlet: { name: string } | null
+  outlet_group: { name: string } | null
 }
 
 type Outlet = { id: string; name: string }
-type Playlist = { id: string; name: string }
+type OutletGroup = { id: string; name: string }
+type GroupMember = { group_id: string; outlet_id: string }
 
 interface Props {
   schedules: Schedule[]
   outlets: Outlet[]
-  playlists: Playlist[]
+  playlists: { id: string; name: string }[]
+  groups: OutletGroup[]
+  groupMembers: GroupMember[]
 }
 
 function parseTimeFraction(t: string): number {
@@ -61,7 +66,75 @@ function parseTimeFraction(t: string): number {
 
 function pad(n: number) { return String(n).padStart(2, '0') }
 
-export function ScheduleView({ schedules, outlets, playlists }: Props) {
+function scheduleTargetLabel(s: Schedule): string {
+  if (s.outlet?.name) return s.outlet.name
+  if (s.outlet_group?.name) return `${s.outlet_group.name} (group)`
+  return 'All outlets'
+}
+
+// Segmented 3-way target selector used in create/edit forms
+function TargetSelector({
+  outlets,
+  groups,
+  defaultType = 'all',
+  defaultOutletId = '',
+  defaultGroupId = '',
+}: {
+  outlets: Outlet[]
+  groups: OutletGroup[]
+  defaultType?: 'all' | 'outlet' | 'group'
+  defaultOutletId?: string
+  defaultGroupId?: string
+}) {
+  const [type, setType] = useState<'all' | 'outlet' | 'group'>(defaultType)
+  const selectCls = 'w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-amber-400 transition-colors'
+
+  return (
+    <div className="space-y-2">
+      <label className="text-xs font-medium text-gray-600">Target</label>
+      <div className="flex rounded-lg border border-gray-200 overflow-hidden text-xs font-medium">
+        {(['all', 'outlet', 'group'] as const).map((t, i) => (
+          <button
+            key={t}
+            type="button"
+            onClick={() => setType(t)}
+            className={`flex-1 py-2 transition-colors ${
+              type === t ? 'bg-amber-500 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'
+            } ${i > 0 ? 'border-l border-gray-200' : ''}`}
+          >
+            {t === 'all' ? 'All outlets' : t === 'outlet' ? 'Outlet' : 'Group'}
+          </button>
+        ))}
+      </div>
+      {type === 'all' && (
+        <>
+          <input type="hidden" name="outlet_id" value="" />
+          <input type="hidden" name="outlet_group_id" value="" />
+        </>
+      )}
+      {type === 'outlet' && (
+        <>
+          <select name="outlet_id" defaultValue={defaultOutletId} className={selectCls}>
+            <option value="">Select outlet…</option>
+            {outlets.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
+          </select>
+          <input type="hidden" name="outlet_group_id" value="" />
+        </>
+      )}
+      {type === 'group' && (
+        <>
+          <input type="hidden" name="outlet_id" value="" />
+          <select name="outlet_group_id" defaultValue={defaultGroupId} className={selectCls}>
+            <option value="">Select group…</option>
+            {groups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
+          </select>
+        </>
+      )}
+    </div>
+  )
+}
+
+export function ScheduleView({ schedules, outlets, playlists, groups, groupMembers }: Props) {
   const [view, setView] = useState<'calendar' | 'list'>('calendar')
   const [outletId, setOutletId] = useState<string>('all')
   const weekDates = getWeekDates()
@@ -76,9 +149,15 @@ export function ScheduleView({ schedules, outlets, playlists }: Props) {
   playlists.forEach((p, i) => { playlistColorIndex[p.id] = i })
   const getColor = (pid: string) => PALETTE[playlistColorIndex[pid] % PALETTE.length] ?? PALETTE[0]
 
-  const filtered = schedules.filter(s =>
-    outletId === 'all' ? true : (s.outlet_id === null || s.outlet_id === outletId)
-  )
+  const filtered = schedules.filter(s => {
+    if (outletId === 'all') return true
+    if (s.outlet_id === null && s.outlet_group_id === null) return true
+    if (s.outlet_id === outletId) return true
+    if (s.outlet_group_id) {
+      return groupMembers.some(m => m.group_id === s.outlet_group_id && m.outlet_id === outletId)
+    }
+    return false
+  })
 
   const blocksByDay: Record<number, (Schedule & { top: number; height: number; color: typeof PALETTE[0] })[]> = {}
   for (let d = 0; d < 7; d++) blocksByDay[d] = []
@@ -199,13 +278,11 @@ export function ScheduleView({ schedules, outlets, playlists }: Props) {
                   style={{ height: ROW_H * 24 }}
                   onClick={e => handleColumnClick(e, day)}
                 >
-                  {/* Hour grid lines */}
                   {Array.from({ length: 24 }, (_, h) => (
                     <div key={h} style={{ top: h * ROW_H, height: ROW_H }}
                       className="absolute inset-x-0 border-b border-gray-50 hover:bg-amber-50/50 transition-colors" />
                   ))}
 
-                  {/* Schedule blocks */}
                   {blocksByDay[day].map((block, i) => (
                     <div
                       key={`${block.id}-${i}`}
@@ -219,7 +296,7 @@ export function ScheduleView({ schedules, outlets, playlists }: Props) {
                       }}
                       className="absolute rounded-md px-1.5 py-1 overflow-hidden z-10 group/block flex flex-col"
                       onClick={e => e.stopPropagation()}
-                      title={`${block.playlist?.name} · ${block.start_time.slice(0, 5)}–${block.end_time.slice(0, 5)}${block.outlet?.name ? ` · ${block.outlet.name}` : ''}`}
+                      title={`${block.playlist?.name} · ${block.start_time.slice(0, 5)}–${block.end_time.slice(0, 5)} · ${scheduleTargetLabel(block)}`}
                     >
                       <span className="text-xs font-semibold truncate leading-tight"
                         style={{ color: block.color.text }}>
@@ -272,11 +349,7 @@ export function ScheduleView({ schedules, outlets, playlists }: Props) {
                   </select>
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-gray-600">Outlet</label>
-                  <select name="outlet_id" className={inputCls}>
-                    <option value="">All outlets</option>
-                    {outlets.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
-                  </select>
+                  <TargetSelector outlets={outlets} groups={groups} />
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-xs font-medium text-gray-600">Start time</label>
@@ -336,7 +409,7 @@ export function ScheduleView({ schedules, outlets, playlists }: Props) {
                         {' · '}
                         {s.days_of_week.length === 0 ? 'Every day' : s.days_of_week.map(d => DAYS_SHORT[d]).join(', ')}
                         {' · '}
-                        {s.outlet?.name ?? 'All outlets'}
+                        {scheduleTargetLabel(s)}
                       </p>
                     </div>
                   </div>
@@ -407,13 +480,12 @@ export function ScheduleView({ schedules, outlets, playlists }: Props) {
                 </select>
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-gray-600">Outlet</label>
-                <select name="outlet_id" defaultValue={outletId === 'all' ? '' : outletId} className={inputCls}>
-                  <option value="">All outlets</option>
-                  {outlets.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
-                </select>
-              </div>
+              <TargetSelector
+                outlets={outlets}
+                groups={groups}
+                defaultType={outletId !== 'all' ? 'outlet' : 'all'}
+                defaultOutletId={outletId !== 'all' ? outletId : ''}
+              />
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
@@ -470,13 +542,17 @@ export function ScheduleView({ schedules, outlets, playlists }: Props) {
                     {playlists.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                   </select>
                 </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-gray-600">Outlet</label>
-                  <select name="outlet_id" defaultValue={editingSchedule.outlet_id ?? ''} className={inputCls}>
-                    <option value="">All outlets</option>
-                    {outlets.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
-                  </select>
-                </div>
+                <TargetSelector
+                  outlets={outlets}
+                  groups={groups}
+                  defaultType={
+                    editingSchedule.outlet_group_id ? 'group'
+                    : editingSchedule.outlet_id ? 'outlet'
+                    : 'all'
+                  }
+                  defaultOutletId={editingSchedule.outlet_id ?? ''}
+                  defaultGroupId={editingSchedule.outlet_group_id ?? ''}
+                />
                 <div className="space-y-1.5">
                   <label className="text-xs font-medium text-gray-600">Start time</label>
                   <input type="time" name="start_time" required

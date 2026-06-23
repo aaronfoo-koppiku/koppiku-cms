@@ -8,6 +8,7 @@ export async function createSchedule(formData: FormData) {
   await supabase.from('schedules').insert({
     playlist_id: formData.get('playlist_id') as string,
     outlet_id: (formData.get('outlet_id') as string) || null,
+    outlet_group_id: (formData.get('outlet_group_id') as string) || null,
     start_time: formData.get('start_time') as string,
     end_time: formData.get('end_time') as string,
     days_of_week: daysRaw,
@@ -30,6 +31,7 @@ export async function updateSchedule(id: string, formData: FormData) {
   await supabase.from('schedules').update({
     playlist_id: formData.get('playlist_id') as string,
     outlet_id: (formData.get('outlet_id') as string) || null,
+    outlet_group_id: (formData.get('outlet_group_id') as string) || null,
     start_time: formData.get('start_time') as string,
     end_time: formData.get('end_time') as string,
     days_of_week: daysRaw,

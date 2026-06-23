@@ -12,11 +12,39 @@ serve(async (req) => {
   const outletId = url.searchParams.get('outlet_id')
   if (!outletId) return new Response('Missing outlet_id', { status: 400 })
 
-  // Fetch all schedules for this outlet (+ nationwide ones) with published playlists
-  const { data: schedules } = await supabase
-    .from('schedules')
-    .select('*, playlist:playlists(*, fallback_image:fallback_image_id(cdn_url))')
-    .or(`outlet_id.eq.${outletId},outlet_id.is.null`)
+  // Find which outlet groups this outlet belongs to
+  const { data: memberOf } = await supabase
+    .from('outlet_group_members')
+    .select('group_id')
+    .eq('outlet_id', outletId)
+
+  const groupIds = (memberOf ?? []).map((m: any) => m.group_id as string)
+
+  // Fetch schedules in three separate queries and merge:
+  // 1. All-outlets schedules (both outlet_id and outlet_group_id are null)
+  // 2. Schedules targeting this specific outlet
+  // 3. Schedules targeting any outlet group this outlet belongs to
+  const selectFields = '*, playlist:playlists(*, fallback_image:fallback_image_id(cdn_url))'
+
+  const [allOutletsResult, specificOutletResult] = await Promise.all([
+    supabase.from('schedules').select(selectFields).is('outlet_id', null).is('outlet_group_id', null),
+    supabase.from('schedules').select(selectFields).eq('outlet_id', outletId),
+  ])
+
+  let groupSchedules: any[] = []
+  if (groupIds.length > 0) {
+    const { data } = await supabase
+      .from('schedules')
+      .select(selectFields)
+      .in('outlet_group_id', groupIds)
+    groupSchedules = data ?? []
+  }
+
+  const allSchedules = [
+    ...(allOutletsResult.data ?? []),
+    ...(specificOutletResult.data ?? []),
+    ...groupSchedules,
+  ]
 
   // Current Malaysia time using local date parts (not toISOString which is UTC)
   const nowMY = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kuala_Lumpur' }))
@@ -24,7 +52,7 @@ serve(async (req) => {
   const currentTime = `${String(nowMY.getHours()).padStart(2, '0')}:${String(nowMY.getMinutes()).padStart(2, '0')}`
   const today = `${nowMY.getFullYear()}-${String(nowMY.getMonth() + 1).padStart(2, '0')}-${String(nowMY.getDate()).padStart(2, '0')}`
 
-  const active = (schedules ?? []).filter((s: any) => {
+  const active = allSchedules.filter((s: any) => {
     const publishedPlaylist = s.playlist?.status === 'published'
     const dayOk = !s.days_of_week?.length || s.days_of_week.includes(dayOfWeek)
     const timeOk = currentTime >= s.start_time && currentTime < s.end_time

@@ -3,10 +3,21 @@ import { ScheduleView } from './schedule-view'
 
 export default async function SchedulesPage() {
   const supabase = await createClient()
-  const [{ data: schedules }, { data: playlists }, { data: outlets }] = await Promise.all([
-    supabase.from('schedules').select('*, playlist:playlists(name), outlet:outlets(name)').order('priority', { ascending: false }),
+  const [
+    { data: schedules },
+    { data: playlists },
+    { data: outlets },
+    { data: groups },
+    { data: groupMembers },
+  ] = await Promise.all([
+    supabase
+      .from('schedules')
+      .select('*, playlist:playlists(name), outlet:outlets(name), outlet_group:outlet_groups(name)')
+      .order('priority', { ascending: false }),
     supabase.from('playlists').select('id, name').eq('status', 'published'),
     supabase.from('outlets').select('id, name').order('name'),
+    supabase.from('outlet_groups').select('id, name').order('name'),
+    supabase.from('outlet_group_members').select('group_id, outlet_id'),
   ])
 
   return (
@@ -19,6 +30,8 @@ export default async function SchedulesPage() {
         schedules={(schedules ?? []) as any}
         playlists={playlists ?? []}
         outlets={outlets ?? []}
+        groups={groups ?? []}
+        groupMembers={groupMembers ?? []}
       />
     </div>
   )

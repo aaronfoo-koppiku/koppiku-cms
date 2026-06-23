@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import { LayoutDashboard, Image, ListVideo, Calendar, Store, Monitor, Coffee } from 'lucide-react'
+import { LayoutDashboard, Image, ListVideo, Calendar, Store, Monitor, Coffee, Users } from 'lucide-react'
 
 const nav = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -9,6 +9,7 @@ const nav = [
   { href: '/playlists', label: 'Playlists', icon: ListVideo },
   { href: '/schedules', label: 'Schedules', icon: Calendar },
   { href: '/outlets', label: 'Outlets', icon: Store },
+  { href: '/outlet-groups', label: 'Outlet Groups', icon: Users },
   { href: '/devices', label: 'Devices', icon: Monitor },
 ]
 
