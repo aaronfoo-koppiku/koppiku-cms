@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { ScheduleView } from './schedule-view'
+import { ForceRefreshButton } from '@/components/force-refresh-button'
 
 export default async function SchedulesPage() {
   const supabase = await createClient()
@@ -22,9 +23,12 @@ export default async function SchedulesPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Schedules</h1>
-        <p className="text-gray-500 text-sm mt-1">Control when playlists play at each outlet</p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Schedules</h1>
+          <p className="text-gray-500 text-sm mt-1">Control when playlists play at each outlet</p>
+        </div>
+        <ForceRefreshButton />
       </div>
       <ScheduleView
         schedules={(schedules ?? []) as any}

@@ -44,7 +44,7 @@ export function useRealtime(outletId: string) {
   useEffect(() => { refresh() }, [refresh])
 
   useEffect(() => {
-    const interval = setInterval(refresh, 60_000)
+    const interval = setInterval(refresh, 15 * 60 * 1000)
     return () => clearInterval(interval)
   }, [refresh])
 
@@ -61,6 +61,15 @@ export function useRealtime(outletId: string) {
       })
     return () => { supabase.removeChannel(channel) }
   }, [outletId, refresh])
+
+  // Listen for CMS-triggered force refresh broadcasts
+  useEffect(() => {
+    const channel = supabase
+      .channel('cms-control')
+      .on('broadcast', { event: 'refresh' }, () => refresh())
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [refresh])
 
   return { items, fallbackImageUrl, isOffline }
 }
