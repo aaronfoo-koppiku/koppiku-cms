@@ -66,6 +66,30 @@ function parseTimeFraction(t: string): number {
 
 function pad(n: number) { return String(n).padStart(2, '0') }
 
+// Assigns non-overlapping column slots to blocks within a day so they share horizontal space
+function layoutBlocks<T extends { top: number; height: number }>(
+  blocks: T[]
+): (T & { col: number; totalCols: number })[] {
+  if (!blocks.length) return []
+  const sorted = [...blocks].sort((a, b) => a.top - b.top)
+  const colEnds: number[] = []
+  const assigned = sorted.map(block => {
+    let col = colEnds.findIndex(end => end <= block.top + 1)
+    if (col === -1) { col = colEnds.length; colEnds.push(0) }
+    colEnds[col] = block.top + block.height
+    return { ...block, col }
+  })
+  return assigned.map(block => {
+    let maxCol = 0
+    for (const other of assigned) {
+      if (other.top < block.top + block.height && other.top + other.height > block.top) {
+        maxCol = Math.max(maxCol, other.col)
+      }
+    }
+    return { ...block, totalCols: maxCol + 1 }
+  })
+}
+
 function scheduleTargetLabel(s: Schedule): string {
   if (s.outlet?.name) return s.outlet.name
   if (s.outlet_group?.name) return `${s.outlet_group.name} (group)`
@@ -135,7 +159,7 @@ function TargetSelector({
 }
 
 export function ScheduleView({ schedules, outlets, playlists, groups, groupMembers }: Props) {
-  const [view, setView] = useState<'calendar' | 'list'>('calendar')
+  const [view, setView] = useState<'calendar' | 'list'>('list')
   const [outletId, setOutletId] = useState<string>('all')
   const weekDates = getWeekDates()
   const today = new Date()
@@ -283,14 +307,14 @@ export function ScheduleView({ schedules, outlets, playlists, groups, groupMembe
                       className="absolute inset-x-0 border-b border-gray-50 hover:bg-amber-50/50 transition-colors" />
                   ))}
 
-                  {blocksByDay[day].map((block, i) => (
+                  {layoutBlocks(blocksByDay[day]).map((block, i) => (
                     <div
                       key={`${block.id}-${i}`}
                       style={{
                         top: block.top + 1,
                         height: block.height - 2,
-                        left: 2,
-                        right: 2,
+                        left: `calc(${(block.col / block.totalCols * 100).toFixed(1)}% + 2px)`,
+                        right: `calc(${((block.totalCols - block.col - 1) / block.totalCols * 100).toFixed(1)}% + 2px)`,
                         background: block.color.bg,
                         borderLeft: `3px solid ${block.color.solid}`,
                       }}
