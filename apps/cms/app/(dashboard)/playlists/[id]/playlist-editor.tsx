@@ -70,6 +70,8 @@ export function PlaylistEditor({ playlist, items: initial, allMedia }: Props) {
   const [nameValue, setNameValue] = useState(playlist.name)
   const [displayName, setDisplayName] = useState(playlist.name)
   const [rotation, setRotation] = useState(playlist.rotation ?? 0)
+  const [savedRotation, setSavedRotation] = useState(playlist.rotation ?? 0)
+  const [savingRotation, setSavingRotation] = useState<'idle' | 'saving' | 'done'>('idle')
   const nameInputRef = useRef<HTMLInputElement>(null)
 
   const fallbackImage = allMedia.find(m => m.id === fallbackImageId) ?? null
@@ -174,17 +176,14 @@ export function PlaylistEditor({ playlist, items: initial, allMedia }: Props) {
         </div>
         <div className="flex items-center gap-3">
           {/* Rotation picker */}
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2">
             <RotateCw size={13} className="text-gray-400" />
             <div className="flex rounded-lg border border-gray-200 overflow-hidden text-xs font-medium">
               {[0, 90, 180, 270].map((deg, i) => (
                 <button
                   key={deg}
                   type="button"
-                  onClick={async () => {
-                    setRotation(deg)
-                    await setPlaylistRotation(playlist.id, deg)
-                  }}
+                  onClick={() => setRotation(deg)}
                   className={`px-2.5 py-1.5 transition-colors ${
                     rotation === deg ? 'bg-amber-500 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'
                   } ${i > 0 ? 'border-l border-gray-200' : ''}`}
@@ -193,6 +192,27 @@ export function PlaylistEditor({ playlist, items: initial, allMedia }: Props) {
                 </button>
               ))}
             </div>
+            <button
+              type="button"
+              disabled={savingRotation === 'saving' || rotation === savedRotation}
+              onClick={async () => {
+                setSavingRotation('saving')
+                await setPlaylistRotation(playlist.id, rotation)
+                setSavedRotation(rotation)
+                setSavingRotation('done')
+                setTimeout(() => setSavingRotation('idle'), 2000)
+              }}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 ${
+                savingRotation === 'done'
+                  ? 'bg-green-500 text-white'
+                  : rotation !== savedRotation
+                    ? 'bg-amber-500 hover:bg-amber-400 text-white'
+                    : 'bg-gray-100 text-gray-400 cursor-default'
+              } disabled:opacity-60`}
+            >
+              {savingRotation === 'saving' && <Loader2 size={11} className="animate-spin" />}
+              {savingRotation === 'done' ? 'Saved!' : 'Save'}
+            </button>
           </div>
 
           <button
