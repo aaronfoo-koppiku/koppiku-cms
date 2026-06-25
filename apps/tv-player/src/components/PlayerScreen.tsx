@@ -9,7 +9,7 @@ import { VideoSlide } from './VideoSlide'
 interface Props { deviceId: string; outletId: string }
 
 export function PlayerScreen({ deviceId, outletId }: Props) {
-  const { items, fallbackImageUrl, isOffline } = useRealtime(outletId)
+  const { items, fallbackImageUrl, rotation, isOffline } = useRealtime(outletId)
   const { currentItem, nextItem, currentIndex, advanceSlide } = usePlayback(items)
   useHeartbeat(deviceId)
   usePlaybackLogger(currentItem, deviceId)
@@ -45,8 +45,21 @@ export function PlayerScreen({ deviceId, outletId }: Props) {
     )
   }
 
+  const is90 = rotation === 90 || rotation === 270
+  const containerStyle: React.CSSProperties = rotation === 0 ? {
+    position: 'relative', width: '100vw', height: '100vh', background: '#000',
+  } : {
+    position: 'fixed',
+    top: '50%',
+    left: '50%',
+    width: is90 ? '100vh' : '100vw',
+    height: is90 ? '100vw' : '100vh',
+    background: '#000',
+    transform: `translate(-50%, -50%) rotate(${rotation}deg)`,
+  }
+
   return (
-    <div style={{ position: 'relative', width: '100vw', height: '100vh', background: '#000' }}>
+    <div style={containerStyle}>
       {currentItem.media.type === 'image' ? (
         <ImageSlide
           key={currentIndex}

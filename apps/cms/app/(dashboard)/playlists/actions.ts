@@ -71,3 +71,9 @@ export async function renamePlaylist(id: string, name: string) {
   revalidatePath('/playlists')
   revalidatePath(`/playlists/${id}`)
 }
+
+export async function setPlaylistRotation(id: string, rotation: number) {
+  const supabase = await createClient()
+  await supabase.from('playlists').update({ rotation }).eq('id', id)
+  revalidatePath(`/playlists/${id}`)
+}

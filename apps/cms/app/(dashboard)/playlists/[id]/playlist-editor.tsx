@@ -4,9 +4,9 @@ import { useRouter } from 'next/navigation'
 import { DndContext, closestCenter, type DragEndEvent } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { GripVertical, X, CheckCircle2, Clock, Plus, Loader2, Pencil, Check } from 'lucide-react'
+import { GripVertical, X, CheckCircle2, Clock, Plus, Loader2, Pencil, Check, RotateCw } from 'lucide-react'
 import type { Playlist, PlaylistItem, Media } from '@koppiku/shared'
-import { updateItemsSequence, removeItemFromPlaylist, addItemToPlaylist, publishPlaylist, unpublishPlaylist, updateItemDuration, setPlaylistFallbackImage, renamePlaylist } from '../actions'
+import { updateItemsSequence, removeItemFromPlaylist, addItemToPlaylist, publishPlaylist, unpublishPlaylist, updateItemDuration, setPlaylistFallbackImage, renamePlaylist, setPlaylistRotation } from '../actions'
 
 function SortableItem({ item, playlistId, onRemove }: {
   item: PlaylistItem & { media: Media }
@@ -69,6 +69,7 @@ export function PlaylistEditor({ playlist, items: initial, allMedia }: Props) {
   const [editingName, setEditingName] = useState(false)
   const [nameValue, setNameValue] = useState(playlist.name)
   const [displayName, setDisplayName] = useState(playlist.name)
+  const [rotation, setRotation] = useState(playlist.rotation ?? 0)
   const nameInputRef = useRef<HTMLInputElement>(null)
 
   const fallbackImage = allMedia.find(m => m.id === fallbackImageId) ?? null
@@ -171,22 +172,46 @@ export function PlaylistEditor({ playlist, items: initial, allMedia }: Props) {
           )}
           <p className="text-gray-500 text-sm mt-1">{items.length} items in playlist</p>
         </div>
-        <button
-          onClick={status === 'draft' ? handlePublish : handleUnpublish}
-          disabled={publishing}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 disabled:opacity-50 ${
-            status === 'draft'
-              ? 'bg-green-500 hover:bg-green-400 text-white'
-              : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
-          }`}
-        >
-          {publishing
-            ? <><Loader2 size={14} className="animate-spin" /> {status === 'draft' ? 'Publishing...' : 'Unpublishing...'}</>
-            : status === 'draft'
-              ? <><CheckCircle2 size={14} /> Publish</>
-              : 'Unpublish'
-          }
-        </button>
+        <div className="flex items-center gap-3">
+          {/* Rotation picker */}
+          <div className="flex items-center gap-1.5">
+            <RotateCw size={13} className="text-gray-400" />
+            <div className="flex rounded-lg border border-gray-200 overflow-hidden text-xs font-medium">
+              {[0, 90, 180, 270].map((deg, i) => (
+                <button
+                  key={deg}
+                  type="button"
+                  onClick={async () => {
+                    setRotation(deg)
+                    await setPlaylistRotation(playlist.id, deg)
+                  }}
+                  className={`px-2.5 py-1.5 transition-colors ${
+                    rotation === deg ? 'bg-amber-500 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'
+                  } ${i > 0 ? 'border-l border-gray-200' : ''}`}
+                >
+                  {deg}°
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <button
+            onClick={status === 'draft' ? handlePublish : handleUnpublish}
+            disabled={publishing}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 disabled:opacity-50 ${
+              status === 'draft'
+                ? 'bg-green-500 hover:bg-green-400 text-white'
+                : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
+            }`}
+          >
+            {publishing
+              ? <><Loader2 size={14} className="animate-spin" /> {status === 'draft' ? 'Publishing...' : 'Unpublishing...'}</>
+              : status === 'draft'
+                ? <><CheckCircle2 size={14} /> Publish</>
+                : 'Unpublish'
+            }
+          </button>
+        </div>
       </div>
 
       <div>

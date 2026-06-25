@@ -15,10 +15,15 @@ function saveItems(items: (PlaylistItem & { media: Media })[]) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(items))
 }
 
+const ROTATION_KEY = 'koppiku_rotation'
+
 export function useRealtime(outletId: string) {
   const [items, setItems] = useState<(PlaylistItem & { media: Media })[]>(loadCachedItems)
   const [fallbackImageUrl, setFallbackImageUrl] = useState<string | null>(
     () => localStorage.getItem(FALLBACK_KEY)
+  )
+  const [rotation, setRotation] = useState<number>(
+    () => Number(localStorage.getItem(ROTATION_KEY) ?? 0)
   )
   const [isOffline, setIsOffline] = useState(false)
 
@@ -28,13 +33,16 @@ export function useRealtime(outletId: string) {
         headers: { 'authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
       })
       if (!res.ok) throw new Error('Failed to fetch schedule')
-      const { items: fresh, fallback_image_url } = await res.json()
+      const { items: fresh, fallback_image_url, schedule } = await res.json()
       setItems(fresh ?? [])
       saveItems(fresh ?? [])
       const url: string | null = fallback_image_url ?? null
       setFallbackImageUrl(url)
       if (url) localStorage.setItem(FALLBACK_KEY, url)
       else localStorage.removeItem(FALLBACK_KEY)
+      const rot: number = schedule?.playlist?.rotation ?? 0
+      setRotation(rot)
+      localStorage.setItem(ROTATION_KEY, String(rot))
       setIsOffline(false)
     } catch {
       setIsOffline(true)
@@ -71,5 +79,5 @@ export function useRealtime(outletId: string) {
     return () => { supabase.removeChannel(channel) }
   }, [refresh])
 
-  return { items, fallbackImageUrl, isOffline }
+  return { items, fallbackImageUrl, rotation, isOffline }
 }
