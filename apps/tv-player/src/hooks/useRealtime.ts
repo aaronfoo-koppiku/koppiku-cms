@@ -75,10 +75,10 @@ export function useRealtime(outletId: string) {
     const channel = supabase
       .channel('cms-control')
       .on('broadcast', { event: 'refresh' }, () => refresh())
-      .on('broadcast', { event: 'clear-cache' }, async () => {
-        if ('caches' in window) {
-          await caches.delete('media-cache')
-        }
+      .on('broadcast', { event: 'clear-cache' }, async ({ payload }) => {
+        const targetOutletId = (payload as any)?.outlet_id
+        if (targetOutletId && targetOutletId !== outletId) return
+        if ('caches' in window) await caches.delete('media-cache')
         await refresh()
       })
       .subscribe()

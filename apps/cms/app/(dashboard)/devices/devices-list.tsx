@@ -1,7 +1,8 @@
 'use client'
 import { useEffect, useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Monitor, Wifi, WifiOff, Pencil, Check, X, Copy, KeyRound, Loader2, Unlink, Play, Trash2 } from 'lucide-react'
+import { Monitor, Wifi, WifiOff, Pencil, Check, X, Copy, KeyRound, Loader2, Unlink, Play, Trash2, Eraser } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
 import { renameDevice, unpairDevice, deleteDevice } from './actions'
 
 type Device = {
@@ -115,6 +116,7 @@ export function DevicesList({ initialDevices, outletPlaylistMap }: Props) {
   const [confirmUnpair, setConfirmUnpair] = useState<string | null>(null)
   const [deleting, setDeleting] = useState<string | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
+  const [clearingCache, setClearingCache] = useState<string | null>(null)
   const [filter, setFilter] = useState<FilterStatus>('all')
 
   // Tick every 15s to keep "X ago" labels and online status fresh
@@ -145,6 +147,17 @@ export function DevicesList({ initialDevices, outletPlaylistMap }: Props) {
     setConfirmUnpair(null)
     await unpairDevice(id)
     setUnpairing(null)
+  }
+
+  async function handleClearCache(deviceId: string, outletId: string) {
+    setClearingCache(deviceId)
+    const supabase = createClient()
+    await supabase.channel('cms-control').send({
+      type: 'broadcast',
+      event: 'clear-cache',
+      payload: { outlet_id: outletId, at: Date.now() },
+    })
+    setClearingCache(null)
   }
 
   async function handleDelete(id: string) {
@@ -347,6 +360,18 @@ export function DevicesList({ initialDevices, outletPlaylistMap }: Props) {
                     </div>
                   ) : (
                     <div className="flex items-center gap-3">
+                      {!isPending && d.outlet?.id && (
+                        <button
+                          onClick={() => handleClearCache(d.id, d.outlet!.id)}
+                          disabled={clearingCache === d.id}
+                          className="flex items-center gap-1 text-xs text-gray-400 hover:text-amber-500 transition-colors disabled:opacity-60"
+                        >
+                          {clearingCache === d.id
+                            ? <Loader2 size={11} className="animate-spin" />
+                            : <Eraser size={11} />}
+                          Clear cache
+                        </button>
+                      )}
                       {!isPending && (
                         <button
                           onClick={() => { setConfirmUnpair(d.id); setConfirmDelete(null) }}
