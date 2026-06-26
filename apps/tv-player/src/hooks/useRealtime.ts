@@ -78,7 +78,13 @@ export function useRealtime(outletId: string) {
       .on('broadcast', { event: 'clear-cache' }, async ({ payload }) => {
         const targetOutletId = (payload as any)?.outlet_id
         if (targetOutletId && targetOutletId !== outletId) return
-        if ('caches' in window) await caches.delete('media-cache')
+        if ('caches' in window) {
+          await Promise.all([
+            caches.delete('media-cache-video'),
+            caches.delete('media-cache-image'),
+            caches.delete('media-cache'), // legacy name
+          ])
+        }
         await refresh()
       })
       .subscribe()

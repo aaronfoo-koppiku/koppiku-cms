@@ -18,17 +18,41 @@ export default defineConfig({
       registerType: 'autoUpdate',
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
-        runtimeCaching: [{
-          urlPattern: /^https:\/\/storage\.googleapis\.com\//,
-          handler: 'CacheFirst',
-          options: {
-            cacheName: 'media-cache',
-            expiration: { maxEntries: 200, maxAgeSeconds: 86400 * 7 },
-            // Required for video: Chrome sends range requests (bytes=0-N),
-            // without this plugin the cache miss on every loop causes grey screen
-            plugins: [new RangeRequestsPlugin()],
+        runtimeCaching: [
+          {
+            // Videos (transcoded MP4s) — CacheFirst with range request support.
+            // Must be listed before the general GCS pattern below.
+            urlPattern: /^https:\/\/storage\.googleapis\.com\/.*\/transcoded\//,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'media-cache-video',
+              expiration: { maxEntries: 50, maxAgeSeconds: 86400 * 7 },
+              plugins: [
+                new RangeRequestsPlugin(),
+                {
+                  cacheWillUpdate: async ({ response }: { response: Response }) =>
+                    response?.status === 200 || response?.status === 206 ? response : null,
+                },
+              ],
+            },
           },
-        }],
+          {
+            // Images — StaleWhileRevalidate: serves from cache instantly,
+            // re-fetches in background so bad entries self-heal after one cycle.
+            urlPattern: /^https:\/\/storage\.googleapis\.com\//,
+            handler: 'StaleWhileRevalidate',
+            options: {
+              cacheName: 'media-cache-image',
+              expiration: { maxEntries: 200, maxAgeSeconds: 86400 * 7 },
+              plugins: [
+                {
+                  cacheWillUpdate: async ({ response }: { response: Response }) =>
+                    response?.status === 200 ? response : null,
+                },
+              ],
+            },
+          },
+        ],
       },
       manifest: {
         name: 'Koppiku TV Player',
