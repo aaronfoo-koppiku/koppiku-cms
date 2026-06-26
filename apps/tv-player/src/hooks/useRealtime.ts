@@ -70,11 +70,17 @@ export function useRealtime(outletId: string) {
     return () => { supabase.removeChannel(channel) }
   }, [outletId, refresh])
 
-  // Listen for CMS-triggered force refresh broadcasts
+  // Listen for CMS-triggered broadcasts: refresh and clear-cache
   useEffect(() => {
     const channel = supabase
       .channel('cms-control')
       .on('broadcast', { event: 'refresh' }, () => refresh())
+      .on('broadcast', { event: 'clear-cache' }, async () => {
+        if ('caches' in window) {
+          await caches.delete('media-cache')
+        }
+        await refresh()
+      })
       .subscribe()
     return () => { supabase.removeChannel(channel) }
   }, [refresh])
