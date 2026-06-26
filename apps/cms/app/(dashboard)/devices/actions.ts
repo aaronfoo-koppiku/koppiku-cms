@@ -37,6 +37,12 @@ export async function renameDevice(id: string, name: string) {
   revalidatePath('/devices')
 }
 
+export async function deleteDevice(id: string) {
+  const supabase = await createClient()
+  await supabase.from('devices').delete().eq('id', id)
+  revalidatePath('/devices')
+}
+
 export async function unpairDevice(id: string) {
   const supabase = await createClient()
   const newCode = String(Math.floor(100000 + Math.random() * 900000))

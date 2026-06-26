@@ -71,7 +71,7 @@ export function PlaylistEditor({ playlist, items: initial, allMedia }: Props) {
   const [displayName, setDisplayName] = useState(playlist.name)
   const [rotation, setRotation] = useState(playlist.rotation ?? 0)
   const [savedRotation, setSavedRotation] = useState(playlist.rotation ?? 0)
-  const [savingRotation, setSavingRotation] = useState<'idle' | 'saving' | 'done'>('idle')
+  const [savingRotation, setSavingRotation] = useState<'idle' | 'saving' | 'done' | 'error'>('idle')
   const nameInputRef = useRef<HTMLInputElement>(null)
 
   const fallbackImage = allMedia.find(m => m.id === fallbackImageId) ?? null
@@ -197,21 +197,25 @@ export function PlaylistEditor({ playlist, items: initial, allMedia }: Props) {
               disabled={savingRotation === 'saving' || rotation === savedRotation}
               onClick={async () => {
                 setSavingRotation('saving')
-                await setPlaylistRotation(playlist.id, rotation)
-                setSavedRotation(rotation)
-                setSavingRotation('done')
-                setTimeout(() => setSavingRotation('idle'), 2000)
+                try {
+                  await setPlaylistRotation(playlist.id, rotation)
+                  setSavedRotation(rotation)
+                  setSavingRotation('done')
+                  setTimeout(() => setSavingRotation('idle'), 2000)
+                } catch (e) {
+                  setSavingRotation('error')
+                  setTimeout(() => setSavingRotation('idle'), 3000)
+                }
               }}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 ${
-                savingRotation === 'done'
-                  ? 'bg-green-500 text-white'
-                  : rotation !== savedRotation
-                    ? 'bg-amber-500 hover:bg-amber-400 text-white'
-                    : 'bg-gray-100 text-gray-400 cursor-default'
+                savingRotation === 'done' ? 'bg-green-500 text-white'
+                : savingRotation === 'error' ? 'bg-red-500 text-white'
+                : rotation !== savedRotation ? 'bg-amber-500 hover:bg-amber-400 text-white'
+                : 'bg-gray-100 text-gray-400 cursor-default'
               } disabled:opacity-60`}
             >
               {savingRotation === 'saving' && <Loader2 size={11} className="animate-spin" />}
-              {savingRotation === 'done' ? 'Saved!' : 'Save'}
+              {savingRotation === 'done' ? 'Saved!' : savingRotation === 'error' ? 'Failed — run migration' : 'Save'}
             </button>
           </div>
 

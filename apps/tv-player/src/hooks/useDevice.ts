@@ -77,6 +77,23 @@ export function useDevice() {
     return () => { cancelled = true }
   }, [deviceId])
 
+  // Poll every 10s while unpaired — fallback in case the Realtime pairing event is missed
+  useEffect(() => {
+    if (outletId) return
+    const id = setInterval(async () => {
+      const { data } = await supabase
+        .from('devices')
+        .select('outlet_id, status')
+        .eq('id', deviceId)
+        .single()
+      if (data?.status === 'active' && data.outlet_id) {
+        localStorage.setItem('koppiku_outlet_id', data.outlet_id)
+        setOutletId(data.outlet_id)
+      }
+    }, 10_000)
+    return () => clearInterval(id)
+  }, [deviceId, outletId])
+
   useEffect(() => {
     const channel = supabase
       .channel(`device:${deviceId}`)

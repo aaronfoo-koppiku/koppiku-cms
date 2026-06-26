@@ -74,6 +74,7 @@ export async function renamePlaylist(id: string, name: string) {
 
 export async function setPlaylistRotation(id: string, rotation: number) {
   const supabase = await createClient()
-  await supabase.from('playlists').update({ rotation }).eq('id', id)
+  const { error } = await supabase.from('playlists').update({ rotation }).eq('id', id)
+  if (error) throw new Error(error.message)
   revalidatePath(`/playlists/${id}`)
 }
