@@ -359,12 +359,12 @@ export function DevicesList({ initialDevices, outletPlaylistMap }: Props) {
                       </button>
                     </div>
                   ) : (
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-col items-end gap-1.5">
                       {!isPending && d.outlet?.id && (
                         <button
                           onClick={() => handleClearCache(d.id, d.outlet!.id)}
                           disabled={clearingCache === d.id}
-                          className="flex items-center gap-1 text-xs text-gray-400 hover:text-amber-500 transition-colors disabled:opacity-60"
+                          className="flex items-center gap-1 text-xs text-gray-500 hover:text-amber-500 transition-colors disabled:opacity-60"
                         >
                           {clearingCache === d.id
                             ? <Loader2 size={11} className="animate-spin" />
@@ -375,7 +375,7 @@ export function DevicesList({ initialDevices, outletPlaylistMap }: Props) {
                       {!isPending && (
                         <button
                           onClick={() => { setConfirmUnpair(d.id); setConfirmDelete(null) }}
-                          className="flex items-center gap-1 text-xs text-gray-400 hover:text-red-500 transition-colors"
+                          className="flex items-center gap-1 text-xs text-gray-500 hover:text-red-500 transition-colors"
                         >
                           <Unlink size={11} />
                           Unpair
@@ -383,7 +383,7 @@ export function DevicesList({ initialDevices, outletPlaylistMap }: Props) {
                       )}
                       <button
                         onClick={() => { setConfirmDelete(d.id); setConfirmUnpair(null) }}
-                        className="flex items-center gap-1 text-xs text-gray-400 hover:text-red-500 transition-colors"
+                        className="flex items-center gap-1 text-xs text-gray-500 hover:text-red-500 transition-colors"
                       >
                         <Trash2 size={11} />
                         Delete
