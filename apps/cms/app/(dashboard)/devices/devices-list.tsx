@@ -2,7 +2,6 @@
 import { useEffect, useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Monitor, Wifi, WifiOff, Pencil, Check, X, Copy, KeyRound, Loader2, Unlink, Play, Trash2, Eraser } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
 import { renameDevice, unpairDevice, deleteDevice } from './actions'
 
 type Device = {
