@@ -1,9 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
-import { createOutlet, deleteOutlet } from './actions'
-import { Store, MapPin } from 'lucide-react'
+import { createOutlet } from './actions'
 import type { Outlet } from '@koppiku/shared'
 import { SubmitButton } from '@/components/submit-button'
-import { DeleteButton } from '@/components/delete-button'
+import { OutletsList } from './outlets-list'
 
 export default async function OutletsPage() {
   const supabase = await createClient()
@@ -30,32 +29,7 @@ export default async function OutletsPage() {
       </div>
 
       <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-        {(outlets ?? []).map((outlet, i) => (
-          <div key={outlet.id} className={`flex items-center justify-between px-5 py-4 ${i > 0 ? 'border-t border-gray-100' : ''}`}>
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 bg-blue-50 rounded-lg flex items-center justify-center">
-                <Store size={16} className="text-blue-600" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-900">{outlet.name}</p>
-                <div className="flex items-center gap-1 mt-0.5">
-                  <MapPin size={11} className="text-gray-400" />
-                  <p className="text-xs text-gray-500">{outlet.region || 'No region'}</p>
-                </div>
-              </div>
-            </div>
-            <form action={deleteOutlet.bind(null, outlet.id)}>
-              <DeleteButton className="text-gray-400 hover:text-red-500 hover:bg-red-50" />
-            </form>
-          </div>
-        ))}
-        {!outlets?.length && (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <Store size={32} className="text-gray-300 mb-3" />
-            <p className="text-sm font-medium text-gray-500">No outlets yet</p>
-            <p className="text-xs text-gray-400 mt-1">Add your first Koppiku location above</p>
-          </div>
-        )}
+        <OutletsList outlets={outlets ?? []} />
       </div>
     </div>
   )

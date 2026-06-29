@@ -10,6 +10,12 @@ export async function createOutlet(formData: FormData) {
   revalidatePath('/outlets')
 }
 
+export async function renameOutlet(id: string, name: string, region: string) {
+  const supabase = await createClient()
+  await supabase.from('outlets').update({ name, region }).eq('id', id)
+  revalidatePath('/outlets')
+}
+
 export async function deleteOutlet(id: string) {
   const supabase = await createClient()
   await supabase.from('outlets').delete().eq('id', id)
